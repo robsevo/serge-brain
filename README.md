@@ -267,9 +267,10 @@ You have two options.
 **[serge-engine](https://github.com/robsevo/serge-engine) — MIT, purpose-built.**
 A companion project that implements exactly the contract below: an
 OpenAI-compatible agent loop, all 13 hook events, a permission system, and JSONL
-transcripts the gates in this repo re-read. It never calls Anthropic. Today it is
-**headless only** (`-p`), so if you want an interactive TUI, use the second
-option for now.
+transcripts the gates in this repo re-read. It runs interactive sessions and
+headless turns, and never calls Anthropic. It does not yet have MCP, session
+resume, or skills/slash-command loading — if you need those, use the second
+option.
 
 ```bash
 git clone https://github.com/robsevo/serge-engine
@@ -297,7 +298,7 @@ and different audiences.
 A monorepo would couple them: every hook tweak would ship a new engine, and the
 brain could no longer claim to run on *any* conforming engine — which is the
 property that lets you keep a Claude Code derivative underneath if you want the
-interactive TUI today.
+MCP, session resume, or the slash commands in this repo.
 
 **The recommended pairing** — two clones, side by side:
 
