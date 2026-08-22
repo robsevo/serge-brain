@@ -464,8 +464,17 @@ def js_checks(path, src, out):
                          "promise chain with no .catch — a rejection escapes this call path silently",
                          "add .catch, or await inside try/catch"))
 
-    # writes without a transaction boundary
-    writes = list(JS_WRITE_CALL.finditer(src))
+    # Writes without a transaction boundary.
+    #
+    # Requires DATABASE context in the file. `.delete()`, `.set()` and `.create()`
+    # are Map/Set methods as often as they are persistence calls, and without
+    # this guard every module holding a Map of pending requests was reported as
+    # needing a transaction.
+    has_db = re.search(
+        r"\b(?:db|database|sql|query|prisma|knex|sequelize|mongo|mongoose|"
+        r"repository|collection\(|\.table\(|typeorm|drizzle|pool\.|client\.query)\b",
+        src, re.I)
+    writes = list(JS_WRITE_CALL.finditer(src)) if has_db else []
     if len(writes) >= 2 and not JS_TXN.search(src):
         out.append(F("high", "no-transaction", path, line_of(src, writes[0].start()),
                      "%d write operations with no transaction boundary — a partial failure "
