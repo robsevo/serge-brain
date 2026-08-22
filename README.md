@@ -269,9 +269,10 @@ A companion project that implements exactly the contract below: an
 OpenAI-compatible agent loop, all 13 hook events, a permission system, and JSONL
 transcripts the gates in this repo re-read. It runs interactive sessions with
 resume, loads the skills, slash commands and **subagent definitions** in this
-repo — running each specialist on the seat its definition names — speaks MCP,
-and renders this repo's own spinner and status line. It never calls Anthropic.
-What it does not do yet: MCP over SSE/HTTP, and a full-screen TUI.
+repo — running each specialist on the seat its definition names — speaks MCP
+over stdio, HTTP and SSE, branches sessions, and renders this repo's own spinner
+and status line. It never calls Anthropic. What it does not do yet: a
+full-screen TUI with panes.
 
 ```bash
 git clone https://github.com/robsevo/serge-engine
@@ -299,7 +300,7 @@ and different audiences.
 A monorepo would couple them: every hook tweak would ship a new engine, and the
 brain could no longer claim to run on *any* conforming engine — which is the
 property that lets you keep a Claude Code derivative underneath if you want its
-full-screen TUI.
+full-screen TUI with panes.
 
 **The recommended pairing** — two clones, side by side:
 
