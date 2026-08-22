@@ -1,9 +1,13 @@
 # Serge
 
 A configuration layer that turns a Claude Code–compatible CLI into an opinionated
-engineering agent: 22 model seats behind a local router, 50 lifecycle
-hook wirings that check the agent's work as it goes, 16 specialist subagents, 21 skills,
+engineering agent: 23 model seats behind a local router, 53 lifecycle
+hook wirings that check the agent's work as it goes, 16 specialist subagents, 22 skills,
 and a constitution you write yourself.
+
+Its gates **compute** rather than ask. A dependency cycle is found by running
+Tarjan over the import graph, not by requesting that the model consider coupling
+— so a plan cannot pass by writing `Security: N/A`.
 
 It runs on free model tiers. A full working setup costs **$0/month**.
 
@@ -23,6 +27,7 @@ It runs on free model tiers. A full working setup costs **$0/month**.
 
 1. [What this repo is (and is not)](#1-what-this-repo-is-and-is-not)
 2. [How it works](#2-how-it-works) — the diagrams
+   - [2.5 The gates compute; they do not ask](#25-the-gates-compute-they-do-not-ask)
 3. [You supply the engine](#3-you-supply-the-engine)
 4. [Prerequisites](#4-prerequisites)
 5. [Install — Linux / macOS / Windows](#5-install)
@@ -41,7 +46,7 @@ It runs on free model tiers. A full working setup costs **$0/month**.
 ## 1. What this repo is (and is not)
 
 **It is** the brain: a constitution, hooks, subagent definitions, skills, slash
-commands, a LiteLLM router config describing 22 model seats with failover
+commands, a LiteLLM router config describing 23 model seats with failover
 chains between them, service units, and an installer.
 
 **It is not** the CLI. See the next section — that part you bring yourself.
@@ -73,11 +78,11 @@ flowchart LR
 
     subgraph BRAIN["🧠 BRAIN — this repo"]
         direction TB
-        B1["constitution<br/>65 hook scripts<br/>16 agents · 21 skills<br/>22-seat router config"]
+        B1["constitution<br/>68 hook scripts<br/>16 agents · 22 skills<br/>23-seat router config"]
     end
 
     BRAIN -->|"1 · --append-system-prompt-file<br/><i>personality overlays</i>"| ENGINE
-    BRAIN -->|"2 · settings.json<br/><i>50 hook wirings</i>"| ENGINE
+    BRAIN -->|"2 · settings.json<br/><i>53 hook wirings</i>"| ENGINE
     BRAIN -->|"3 · CLAUDE.md @-import<br/><i>the constitution</i>"| ENGINE
     BRAIN -->|"4 · OPENAI_BASE_URL<br/><i>the model router</i>"| ENGINE
 
@@ -113,12 +118,12 @@ or send it back around.
 
 ```mermaid
 flowchart TD
-    U([you type a prompt]) --> UPS["<b>UserPromptSubmit</b> · 16 hooks<br/>ambiguity · complexity · research<br/>reference resolution · swarm brief"]
+    U([you type a prompt]) --> UPS["<b>UserPromptSubmit</b> · 17 hooks<br/>ambiguity · complexity · design lenses<br/>reference resolution · swarm brief"]
     UPS --> ROUTE{"<b>route</b><br/>image? live fact?<br/>hard task?"}
     ROUTE -->|"vision"| SEAT[["seat chosen"]]
     ROUTE -->|"escalate"| SEAT
     ROUTE -->|"default"| SEAT
-    SEAT --> LOOP["<b>tool loop</b><br/>PreToolUse · 5 hooks<br/>PostToolUse · 6 hooks"]
+    SEAT --> LOOP["<b>tool loop</b><br/>PreToolUse · 6 hooks<br/>PostToolUse · 7 hooks"]
     LOOP -->|"spawns agents"| SUB["<b>SubagentStart</b> · 3 hooks<br/>repo card · seat notes · swarm doctrine"]
     SUB --> LOOP
     LOOP --> STOP["<b>Stop</b> · stop-checks.sh<br/>6 stages, cheap → expensive"]
@@ -179,20 +184,149 @@ Two consequences worth internalising:
 - **Chains are forward-only.** Each seat's fallback list ends somewhere
   terminal, so a walk can never loop between two exhausted providers.
 
+### 2.5 The gates compute; they do not ask
+
+Most agent guardrails are written as instructions: *consider security, think
+about scale, watch your complexity.* An instruction is satisfied by writing
+`Security: N/A` — which is why a checklist tends to certify exactly the work it
+was meant to catch.
+
+Serge's gates are ordered by how hard they are to fake, and the weight sits on
+the top two rungs.
+
+| Rung | Derived from | Fakeable? |
+|---|---|---|
+| **computed** — cycles, coupling, complexity, dead tests | the import graph and the AST | no |
+| **grounded** — cited files exist, commands really ran | the filesystem, the turn's own record | no |
+| **structural** — depth vs blast radius, a check per step | arithmetic on the plan | weakly |
+| **prose** — the routed design questions | reading the text | yes |
+
+Three gates sit at the three moments that matter:
+
+```mermaid
+flowchart LR
+    P([prompt]) --> D["<b>design-directive</b><br/><i>UserPromptSubmit</i><br/>routes CS lenses<br/>+ 84-term vocabulary"]
+    D --> PLAN["planning"]
+    PLAN --> PG{"<b>plan-gate</b><br/><i>PreToolUse ExitPlanMode</i><br/>do the cited files exist?"}
+    PG -->|"blocked"| PLAN
+    PG -->|"approved"| CODE["editing"]
+    CODE --> AG{"<b>arch-gate</b><br/><i>PostToolUse</i><br/>27 computed properties"}
+    AG -->|"defect"| CODE
+    AG -->|"clean"| DONE([done])
+
+    style P fill:#e8f5e9,stroke:#34a853,color:#000
+    style DONE fill:#e8f5e9,stroke:#34a853,color:#000
+    style PG fill:#fff3e0,stroke:#e8710a,color:#000
+    style AG fill:#fff3e0,stroke:#e8710a,color:#000
+    style D fill:#e8f0fe,stroke:#4285f4,color:#000
+```
+
+**`arch-gate`** computes, on every edit: dependency cycles (Tarjan over the
+import graph), layering violations, orphan and self-referential modules, god
+objects, coupling and instability, cyclomatic complexity, swallowed errors,
+unhandled rejections, unbounded network calls, missing idempotency on retried
+writes, N+1 queries, missing transaction boundaries, unindexed filters,
+migrations with no rollback, tests that cannot fail, untested modules,
+unauthorized mutation routes, trust-boundary crossings, and removable bulk.
+
+It follows the **write, not the tool**. Source written through the shell — a
+heredoc, a redirect, `tee`, `sed -i`, `cp` — used to bypass every code gate,
+because they all matched only `Edit|Write|MultiEdit`.
+
+**`plan-gate`** fires before *you* are asked to approve a plan. Its strongest
+check is the cheapest: every file the plan cites must exist. A plan naming
+`src/services/auth.ts` in a repo with no such file was written from imagination,
+and that one check catches the whole class.
+
+**Neither can trap a session.** Both block once per distinct finding-set; a
+changed set blocks again, and a repeat objection arrives as context instead. A
+gate with no memory turns into an edit-block-edit loop with no exit.
+
+Everything above is tested against a corpus of planted defects, and each suite
+carries a `--self-test` that swaps the checker for a stub and asserts the suite
+**fails**:
+
+```bash
+python3 ~/.serge/lib/archscan_test.py --self-test   # 42-case corpus
+bash    ~/.serge/lib/gates_test.sh    --self-test   # 23 hook behaviours
+```
+
+A suite that still passes when the checker is removed is not testing the checker.
+
 ## 3. You supply the engine
 
-This repo contains no CLI binary or source, on purpose.
-
-Serge is built on a Claude Code–derived engine, and that code is Anthropic's
-proprietary software. Redistributing it is not something this repo can do — so
-it doesn't. The install script expects an engine to already be present and wires
-the brain onto it.
-
-**Point the installer at your engine:**
+This repo contains no CLI binary or source, on purpose. The installer expects an
+engine to already be present and wires the brain onto it:
 
 ```bash
 ./install.sh --engine /path/to/your/engine
 ```
+
+You have two options.
+
+**[serge-engine](https://github.com/robsevo/serge-engine) — MIT, purpose-built.**
+A companion project that implements exactly the contract below: an
+OpenAI-compatible agent loop, all 13 hook events, a permission system, and JSONL
+transcripts the gates in this repo re-read. It never calls Anthropic. Today it is
+**headless only** (`-p`), so if you want an interactive TUI, use the second
+option for now.
+
+```bash
+git clone https://github.com/robsevo/serge-engine
+( cd serge-engine && npm run build )
+./install.sh --engine ../serge-engine
+```
+
+**A Claude Code–derived engine — interactive, not redistributable.** That code is
+Anthropic's proprietary software, which is why this repo cannot ship it. If you
+have one, point the installer at it.
+
+### 3.1 Why two repos, and how to pair them
+
+Brain and engine are **separate repositories on purpose**, and the reason is not
+tidiness — it is that they have different licences, different release rhythms,
+and different audiences.
+
+| | serge-brain | serge-engine |
+|---|---|---|
+| what it is | configuration: hooks, gates, skills, router config | a runtime: agent loop, tools, permissions |
+| changes when | you change how the agent should *behave* | you change what the agent *can do* |
+| can be swapped | no — it is the product | yes — any conforming engine works |
+| licence | MIT | MIT |
+
+A monorepo would couple them: every hook tweak would ship a new engine, and the
+brain could no longer claim to run on *any* conforming engine — which is the
+property that lets you keep a Claude Code derivative underneath if you want the
+interactive TUI today.
+
+**The recommended pairing** — two clones, side by side:
+
+```bash
+git clone https://github.com/robsevo/serge-brain
+git clone https://github.com/robsevo/serge-engine
+
+( cd serge-engine && npm run build )
+( cd serge-brain  && ./install.sh --engine ../serge-engine )
+```
+
+That is the whole integration. `install.sh` verifies the engine answers
+`--version`, resolves the hook paths into `~/.serge/settings.json`, and stops
+before writing a key or starting a service.
+
+**Try it without touching an existing install** — the installer supports a
+separate home, so a trial costs you nothing:
+
+```bash
+SERGE_HOME=~/.serge-trial ./install.sh --engine ../serge-engine
+SERGE_HOME=~/.serge-trial serge -p "reply with: ok"
+```
+
+**Pinning.** The two repos meet at a contract, not an API: the 13 hook events,
+the payload fields, the JSONL transcript shape, and the deny protocols. That
+contract is versioned in
+[`docs/ENGINE-CONTRACT.md`](https://github.com/robsevo/serge-engine/blob/main/docs/ENGINE-CONTRACT.md)
+in the engine repo, and it is *generated by observing a running engine* rather
+than written by hand. If you pin, pin both to the same contract revision.
 
 The engine needs to be Claude Code–compatible: it must read `CLAUDE_CONFIG_DIR`
 for its config directory, support `settings.json` hooks, and accept an
