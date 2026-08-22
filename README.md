@@ -270,10 +270,12 @@ OpenAI-compatible agent loop, all 13 hook events, a permission system, and JSONL
 transcripts the gates in this repo re-read. It runs interactive sessions with
 resume, loads the skills, slash commands and **subagent definitions** in this
 repo — running each specialist on the seat its definition names — speaks MCP
-over stdio, HTTP and SSE, branches sessions, and renders this repo's own spinner
-and status line in a pinned pane that leaves your scrollback intact. It never
-calls Anthropic. What it does not do yet: mouse support, and OAuth for remote
-MCP servers.
+over stdio, HTTP and SSE, and branches sessions. Its TUI is React and Ink, the
+same stack the derived engine uses: finished turns are committed to scrollback
+once and never redrawn, so only the live region — spinner, mascot, status line —
+repaints. Pressing `/` opens a command menu carrying this repo's own
+`commands/*.md` alongside the built-ins. It never calls Anthropic. What it does
+not do yet: mouse support, and OAuth for remote MCP servers.
 
 ```bash
 git clone https://github.com/robsevo/serge-engine
