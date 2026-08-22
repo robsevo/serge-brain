@@ -1,0 +1,452 @@
+{
+ "machine": {
+  "lens": "D \u00b7 Machine reality",
+  "terms": [
+   {
+    "t": "Turing machine",
+    "d": "abstract tape+rules model that defines what is computable at all",
+    "u": "when asking whether a problem is solvable, not just slow"
+   },
+   {
+    "t": "CPU",
+    "d": "executes instructions in order; the clock is your real budget",
+    "u": "when the work is arithmetic-bound rather than waiting on I/O"
+   },
+   {
+    "t": "transistor",
+    "d": "the physical switch every layer above is built from",
+    "u": "context for why branches and cache misses cost what they do"
+   },
+   {
+    "t": "bit",
+    "d": "one binary digit, 0 or 1 \u2014 the smallest unit of state",
+    "u": "packing flags, computing storage exactly"
+   },
+   {
+    "t": "byte",
+    "d": "8 bits; the unit almost every API measures in",
+    "u": "sizing buffers, payloads, disk"
+   },
+   {
+    "t": "nibble",
+    "d": "4 bits \u2014 exactly one hex digit",
+    "u": "reading hex dumps and bit masks"
+   },
+   {
+    "t": "binary",
+    "d": "base 2",
+    "u": "masks, flags, permissions"
+   },
+   {
+    "t": "hexadecimal",
+    "d": "base 16; two digits per byte",
+    "u": "addresses, colours, hashes, byte dumps"
+   },
+   {
+    "t": "ASCII / character encoding",
+    "d": "the map from bytes to characters; ASCII is 7-bit, UTF-8 is variable-width",
+    "u": "any time text crosses a boundary \u2014 mojibake is an encoding mismatch, never a font bug"
+   },
+   {
+    "t": "machine code",
+    "d": "the raw instructions the CPU runs",
+    "u": "the bottom of every abstraction you are debugging"
+   },
+   {
+    "t": "RAM",
+    "d": "volatile working memory; fast, finite, gone on restart",
+    "u": "deciding what to hold vs recompute vs persist"
+   },
+   {
+    "t": "memory address",
+    "d": "the numeric location of a byte in RAM",
+    "u": "understanding pointers, references and segfaults"
+   },
+   {
+    "t": "I/O",
+    "d": "anything crossing the process boundary \u2014 disk, network, terminal",
+    "u": "the slowest thing in most programs by orders of magnitude; batch it, never loop it"
+   },
+   {
+    "t": "big / little endian",
+    "d": "the order bytes are stored in",
+    "u": "binary protocols and file formats; wrong endianness reads as garbage"
+   },
+   {
+    "t": "signed / unsigned",
+    "d": "whether the top bit means negative or magnitude",
+    "u": "overflow behaviour, and why a length should never be signed"
+   },
+   {
+    "t": "int",
+    "d": "whole number, fixed width",
+    "u": "counting, indexing \u2014 knowing the width tells you when it overflows"
+   },
+   {
+    "t": "float / double",
+    "d": "approximate real numbers, 32/64-bit",
+    "u": "measurement; NEVER money, and never compare with =="
+   },
+   {
+    "t": "char / string",
+    "d": "a single character vs a sequence",
+    "u": "string ops are O(n) and often allocate \u2014 watch them inside loops"
+   },
+   {
+    "t": "pointer",
+    "d": "a value that IS a memory address",
+    "u": "manual memory languages; the null case is the bug"
+   },
+   {
+    "t": "reference",
+    "d": "a handle to an object rather than a copy",
+    "u": "mutating a shared object is how a 'pure' function surprises you"
+   },
+   {
+    "t": "heap memory",
+    "d": "dynamically allocated, lives until freed or collected",
+    "u": "anything whose size or lifetime is not known at compile time"
+   },
+   {
+    "t": "garbage collector",
+    "d": "reclaims unreachable heap automatically",
+    "u": "pauses and retained references are its two costs"
+   },
+   {
+    "t": "call stack",
+    "d": "the frames of currently-active calls",
+    "u": "reading a stack trace; it is finite"
+   },
+   {
+    "t": "stack overflow",
+    "d": "the call stack ran out \u2014 usually runaway recursion",
+    "u": "recursion without a base condition, or depth proportional to input"
+   },
+   {
+    "t": "threads",
+    "d": "independent execution paths sharing memory",
+    "u": "shared mutable state across threads needs a lock or it is a race"
+   },
+   {
+    "t": "concurrency",
+    "d": "tasks interleaved so progress overlaps",
+    "u": "waiting on many I/O operations"
+   },
+   {
+    "t": "parallelism",
+    "d": "tasks literally running at the same instant",
+    "u": "CPU-bound work split across cores \u2014 different problem from concurrency"
+   },
+   {
+    "t": "bare metal / VM",
+    "d": "running directly on hardware vs a virtualised machine",
+    "u": "each layer trades isolation for overhead"
+   }
+  ]
+ },
+ "system": {
+  "lens": "H3 \u00b7 System & operations",
+  "terms": [
+   {
+    "t": "kernel",
+    "d": "the privileged core mediating all hardware access",
+    "u": "every file read and packet send is a syscall, and a syscall is not free"
+   },
+   {
+    "t": "driver",
+    "d": "kernel module that speaks a specific device's protocol",
+    "u": "when hardware behaves differently across machines"
+   },
+   {
+    "t": "shell",
+    "d": "the program that interprets your commands",
+    "u": "quoting and word-splitting bugs live here"
+   },
+   {
+    "t": "CLI",
+    "d": "text in, text out, composable via pipes",
+    "u": "the interface that scripts and other programs can drive"
+   },
+   {
+    "t": "SSH",
+    "d": "encrypted remote shell, key-authenticated",
+    "u": "remote work; passwordless keys beat passwords"
+   },
+   {
+    "t": "mainframe",
+    "d": "centralised high-throughput machine, still running finance/airlines",
+    "u": "reminder that batch processing predates and outlives most fashions"
+   }
+  ]
+ },
+ "lang": {
+  "lens": "C \u00b7 Language & paradigms",
+  "terms": [
+   {
+    "t": "programming language",
+    "d": "notation with rules for expressing computation",
+    "u": "choose for the ecosystem and the failure modes, not familiarity"
+   },
+   {
+    "t": "abstraction",
+    "d": "hiding detail behind an interface",
+    "u": "good when it removes more complexity than it adds; otherwise it is a tax"
+   },
+   {
+    "t": "interpreted",
+    "d": "executed statement-by-statement at runtime",
+    "u": "fast to iterate, slower to run, errors surface late"
+   },
+   {
+    "t": "compiled",
+    "d": "translated to machine code ahead of time",
+    "u": "slower to iterate, faster to run, whole classes of error caught first"
+   },
+   {
+    "t": "executable",
+    "d": "a file the OS can load and run directly",
+    "u": "the deployable artifact"
+   },
+   {
+    "t": "data type",
+    "d": "the set of values and operations something admits",
+    "u": "the cheapest correctness tool you have"
+   },
+   {
+    "t": "variable",
+    "d": "a named binding to a value",
+    "u": "its SCOPE and whether it is reassigned are what actually matter"
+   },
+   {
+    "t": "static typing",
+    "d": "types checked before it runs",
+    "u": "catches shape errors at build time; costs annotation"
+   },
+   {
+    "t": "dynamic typing",
+    "d": "types checked as it runs",
+    "u": "fast to write; the error arrives in production instead"
+   },
+   {
+    "t": "class",
+    "d": "a template bundling state with the operations on it",
+    "u": "when identity and lifecycle matter, not merely to group functions"
+   },
+   {
+    "t": "properties / methods",
+    "d": "the state a class holds, and what it can do",
+    "u": "if it has no state, it is a function, not a class"
+   },
+   {
+    "t": "inheritance",
+    "d": "a subclass taking a parent's behaviour",
+    "u": "the most over-used tool in OOP \u2014 prefer composition"
+   },
+   {
+    "t": "instantiate",
+    "d": "create a concrete object from a class",
+    "u": "construction is where invariants are established"
+   },
+   {
+    "t": "design pattern",
+    "d": "a named, reusable solution shape",
+    "u": "reach for one when it removes complexity, never to sound rigorous"
+   },
+   {
+    "t": "imperative",
+    "d": "statements that change state step by step",
+    "u": "when the sequence IS the meaning"
+   },
+   {
+    "t": "procedural",
+    "d": "imperative organised into procedures",
+    "u": "straightforward transformations"
+   },
+   {
+    "t": "declarative",
+    "d": "state WHAT you want, not how",
+    "u": "SQL, config, queries \u2014 the engine picks the how"
+   },
+   {
+    "t": "functional",
+    "d": "computation as pure functions over immutable values",
+    "u": "when you want results that do not depend on hidden state"
+   },
+   {
+    "t": "multiparadigm",
+    "d": "supports several of the above",
+    "u": "most real languages \u2014 choose per problem, not per religion"
+   },
+   {
+    "t": "OOP",
+    "d": "organising code around objects owning their state",
+    "u": "large domains with real entities and lifecycles"
+   }
+  ]
+ },
+ "struct": {
+  "lens": "A/B \u00b7 Data structures",
+  "terms": [
+   {
+    "t": "array",
+    "d": "contiguous, index-addressed",
+    "u": "O(1) by index, O(n) to search or insert in the middle"
+   },
+   {
+    "t": "linked list",
+    "d": "nodes each pointing to the next",
+    "u": "O(1) insert/remove given the node, O(n) to find it, poor cache locality"
+   },
+   {
+    "t": "set",
+    "d": "unordered unique membership",
+    "u": "O(1) 'have I seen this?' \u2014 the fix for a scan inside a loop"
+   },
+   {
+    "t": "hash map",
+    "d": "key to value via a hash function",
+    "u": "O(1) average lookup; the single most under-used fix for O(n\u00b2)"
+   },
+   {
+    "t": "stack",
+    "d": "last in, first out",
+    "u": "undo, parsing, depth-first traversal, the call stack itself"
+   },
+   {
+    "t": "queue",
+    "d": "first in, first out",
+    "u": "work scheduling, breadth-first traversal, buffering producers and consumers"
+   },
+   {
+    "t": "tree",
+    "d": "hierarchy of nodes with one parent each",
+    "u": "ordered data with O(log n) search; filesystems, indexes, ASTs"
+   },
+   {
+    "t": "graph",
+    "d": "nodes joined by edges, any topology",
+    "u": "dependencies, routes, social relations \u2014 cycles are the thing to check for"
+   },
+   {
+    "t": "nodes and edges",
+    "d": "the vertices and the connections between them",
+    "u": "the vocabulary every graph algorithm is written in"
+   }
+  ]
+ },
+ "algo": {
+  "lens": "A/B \u00b7 Algorithms & complexity",
+  "terms": [
+   {
+    "t": "algorithm",
+    "d": "a finite, unambiguous procedure that terminates",
+    "u": "state its invariant and why it ends \u2014 that is the correctness argument"
+   },
+   {
+    "t": "Big-O",
+    "d": "growth of cost as input grows, ignoring constants",
+    "u": "comparing approaches BEFORE writing them; constants still matter at small n"
+   },
+   {
+    "t": "time complexity",
+    "d": "how run time scales with n",
+    "u": "the number to state before you pick a container"
+   },
+   {
+    "t": "space complexity",
+    "d": "how memory scales with n",
+    "u": "the one people forget \u2014 an O(n) cache on an O(n) input doubles your footprint"
+   },
+   {
+    "t": "brute force",
+    "d": "try everything",
+    "u": "correct, and the right answer when n is genuinely small \u2014 say so rather than guessing"
+   },
+   {
+    "t": "divide and conquer",
+    "d": "split, solve independently, combine",
+    "u": "sorting, search, anything with independent halves \u2014 often O(n log n)"
+   },
+   {
+    "t": "dynamic programming",
+    "d": "solve overlapping subproblems once, reuse",
+    "u": "when the naive recursion recomputes the same call \u2014 turns exponential into polynomial"
+   },
+   {
+    "t": "memoization",
+    "d": "cache results keyed by arguments",
+    "u": "the top-down form of DP; only helps when calls actually repeat"
+   },
+   {
+    "t": "greedy",
+    "d": "take the locally best step each time",
+    "u": "fast, but only correct when the problem has the greedy-choice property \u2014 prove it or test it"
+   },
+   {
+    "t": "Dijkstra's shortest path",
+    "d": "cheapest route through a weighted graph, no negative edges",
+    "u": "routing, cost minimisation over a graph"
+   },
+   {
+    "t": "backtracking",
+    "d": "explore, and undo on failure",
+    "u": "constraint problems \u2014 sudoku, scheduling, permutations"
+   },
+   {
+    "t": "recursion",
+    "d": "a function defined in terms of itself",
+    "u": "tree and divide-and-conquer shapes; needs a base condition and a depth budget"
+   },
+   {
+    "t": "base condition",
+    "d": "the case that returns without recursing",
+    "u": "its absence is an infinite loop that ends as a stack overflow"
+   }
+  ]
+ },
+ "net": {
+  "lens": "E \u00b7 Networking",
+  "terms": [
+   {
+    "t": "IP address",
+    "d": "the numeric address of a host",
+    "u": "the layer DNS resolves to"
+   },
+   {
+    "t": "URL",
+    "d": "scheme, host, path, query identifying a resource",
+    "u": "parse it, never regex it"
+   },
+   {
+    "t": "DNS",
+    "d": "name to IP resolution, heavily cached",
+    "u": "a stale cache is a very common 'it works on my machine'"
+   },
+   {
+    "t": "TCP",
+    "d": "ordered, reliable, connection-oriented byte stream",
+    "u": "reliability is not delivery \u2014 a connection can half-open and hang"
+   },
+   {
+    "t": "packet",
+    "d": "the unit the network actually moves",
+    "u": "fragmentation and MTU explain size-dependent failures"
+   },
+   {
+    "t": "SSL / TLS",
+    "d": "encryption and identity for a connection",
+    "u": "certificate expiry and clock skew are the usual failures"
+   },
+   {
+    "t": "HTTP",
+    "d": "request/response protocol over TCP",
+    "u": "the verb states intent: GET must be safe, PUT/DELETE idempotent, POST neither"
+   },
+   {
+    "t": "API",
+    "d": "a contract between programs",
+    "u": "version it, and decide what a breaking change means before you ship one"
+   }
+  ]
+ }
+}

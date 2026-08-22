@@ -30,7 +30,7 @@ Default: **Godot 4** for anything meant to ship; **Kaboom** to prototype a mecha
 Rendering is a thin layer. The **simulation is a pure function of `(seed, inputs)`**. That buys:
 - **Reproducibility** — same seed + inputs ⇒ byte-identical run (seed everything; one RNG stream
   per subsystem). See `templates/deterministic-core/game.mjs` (`mulberry32` PRNG; upgrade to a
-  ChaCha stream if you need it — same discipline GRTZKY uses).
+  ChaCha stream if you need it).
 - **Headless testability** — test game logic with **no GPU and no window**: known-answer
   regression (frozen seed+inputs ⇒ frozen signature), determinism, rules, edge cases. See
   `templates/deterministic-core/game.test.mjs` — this is the backtest gate; a broken signature
@@ -52,7 +52,7 @@ frame-rate-dependent.
 - **Save/load** = serialize `(seed, inputTape)` or the state snapshot; determinism makes replays free.
 - **Input**: capture intent (`up/left/fire`) not device keys; lets you record/replay/AI-drive it.
 - **Fail loudly**: never silently clamp a bad state — assert invariants in dev builds (score≥0,
-  positions in bounds), same as the FI/probability bounds discipline in GRTZKY.
+  positions in bounds) — the same bounds discipline any probabilistic sim needs.
 
 ## Asset pipeline (free / procedural — no paid packs)
 **Tested tool** (B.3, verified loading in headless Godot — `test_assetgen.sh` 4/4):

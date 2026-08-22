@@ -1746,6 +1746,9 @@ def parse_ranges(spec):
             try:
                 out.append((int(a), int(b)))
             except ValueError:
+                # A malformed range in a user-supplied --lines spec is skipped so
+                # the rest of the spec still applies; refusing the whole scan over
+                # one bad token would be worse than ignoring it.
                 pass
         elif part.isdigit():
             out.append((int(part), int(part)))
@@ -1804,6 +1807,8 @@ def main(argv):
                     if len(context) >= AUTO_CONTEXT_CAP:
                         break
             except OSError:
+                # Context gathering is best-effort: an unreadable directory means
+                # less context, never a failed scan of the file we were asked about.
                 pass
 
     findings, scanned_lines, all_fns = [], 0, []

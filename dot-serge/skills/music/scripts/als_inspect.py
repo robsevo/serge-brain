@@ -44,6 +44,8 @@ def inspect(path: Path):
             try:
                 out["tempo_bpm"] = float(value_attr(manual))
             except ValueError:
+                # A non-numeric tempo means an unexpected .als layout: report the
+                # rest of the project rather than failing the whole inspection.
                 pass
 
     tracks = []

@@ -33,10 +33,19 @@
 #     re-running an arbitrary command at stop time is a side-effect hazard and
 #     re-running a real suite costs ~55s on every turn. SERGE_CLAIMS_RERUN=1
 #     opts into real re-execution for allowlisted test/typecheck/lint commands.
-#   - NO CLAIMS BLOCK IS NOT AN ERROR. This gate only judges claims that were
-#     made. Requiring a block on every turn would make it a tax on conversation;
-#     the constitution asks for one when work was done, and the other gates
-#     already cover unclaimed work.
+#   - NO CLAIMS BLOCK IS USUALLY NOT AN ERROR. This gate mostly judges claims
+#     that were made; requiring a block on every turn would tax conversation.
+#     NARROWED 2026-08-22: the old rule made the block purely opt-in, which is
+#     the one hole a model grading itself will always find — the 2026-08-22
+#     serge2 incident shipped "Verification Results: all passed" for a chain of
+#     scripts whose engine was a hardcoded simulator, and every gate stayed
+#     silent because no <claims> block was ever emitted. The claim that "the
+#     other gates already cover unclaimed work" was the false premise: those
+#     gates are regex-over-prose, and prose is precisely what a confident wrong
+#     turn produces. So now: a turn that MUTATED something AND asserts success
+#     with no falsifiable block attached is nudged once for one. Turns that
+#     change nothing, ask questions, or describe work without claiming it
+#     works still pass untaxed.
 #   - Fails OPEN on any parse error, timeout, or unreadable input. A gate that
 #     cannot read its input has proved nothing.
 #
@@ -84,9 +93,129 @@ if not final and tx and os.path.exists(tx):
 if not final:
     sys.exit(0)
 
+# ── what did THIS turn actually touch? (computed once, used by both checks) ──
+# "This turn" = everything after the last REAL user prompt. tool_result payloads
+# also arrive as type=="user" entries and must not be mistaken for a new prompt.
+MUTATOR_TOOLS = {"Edit", "Write", "MultiEdit", "NotebookEdit"}
+# Strict: things that CHANGE state. Deliberately excludes test/build runners.
+MUTATE_CMD = re.compile(
+    r"\bsed\s+-i\b|\bgit\s+(?:commit|push|apply|checkout|reset|revert|mv|rm)\b"
+    r"|\b(?:ln|mv|cp|rm|rmdir|tee|touch|install|chmod|chown|mkdir|truncate|dd)\b"
+    r"|\b(?:npm|pnpm|yarn|bun|pip|uv|cargo|go)\s+(?:install|add|remove|uninstall)\b"
+    r"|>>?\s*[^&\s|]")
+# Loose: any real work, including read-only verification runs.
+WORK_CMD = re.compile(
+    r"\bsed\s+-i\b|\b(?:ln|mv|cp|rm|tee|install|chmod|chown|mkdir|git|npm|npx|"
+    r"bun|bunx|pnpm|yarn|pip|uv|make|cargo|go|pytest|tsc|docker|systemctl)\b")
+
+def scan_turn():
+    """-> (did_work, did_mutate). Returns (None, None) when unreadable."""
+    if not tx or not os.path.exists(tx):
+        return (None, None)
+    try:
+        turn = []
+        with open(tx, encoding="utf-8", errors="replace") as fh:
+            for line in fh:
+                try:
+                    e = json.loads(line)
+                except Exception:
+                    continue
+                if e.get("type") == "user":
+                    c = (e.get("message") or {}).get("content")
+                    if isinstance(c, str) or (isinstance(c, list) and any(
+                            isinstance(b, dict) and b.get("type") == "text" for b in c)):
+                        turn = []
+                        continue
+                turn.append(e)
+        work = mut = False
+        for e in turn:
+            for b in ((e.get("message") or {}).get("content") or []):
+                if not isinstance(b, dict) or b.get("type") != "tool_use":
+                    continue
+                n = b.get("name")
+                if n in MUTATOR_TOOLS:
+                    work = mut = True
+                elif n == "Bash":
+                    cmd = str((b.get("input") or {}).get("command") or "")
+                    if WORK_CMD.search(cmd):
+                        work = True
+                    if MUTATE_CMD.search(cmd):
+                        mut = True
+        return (work, mut)
+    except Exception:
+        return (None, None)
+
+_work, _mutated = scan_turn()
+_standing_down = bool(d.get("stop_hook_active"))
+
+# ── phantom-change check ─────────────────────────────────────────────────────
+# WHY (user, 2026-08-22): "Serge goes on a logical tangent or guesses and says
+# the work is done, and it's completely wrong — nothing changed sort of thing."
+# That failure leaves a signature no prose-gate can see but this one can: the
+# message asserts a completed mutation in the first person, and the turn's own
+# record contains no mutation at all. Not a wording dispute — a claim about the
+# world, checked against the world.
+CHANGE_CLAIM = re.compile(
+    r"\bI(?:'ve| have)?\s+(?:just\s+)?(?:fixed|updated|changed|created|added|removed|deleted"
+    r"|patched|rebuilt|reinstalled|implemented|applied|wrote|written|modified|replaced"
+    r"|installed|configured|repointed|migrated|renamed|refactored)\b"
+    r"|\bhas been (?:updated|fixed|created|changed|applied|added|removed|replaced|rebuilt)\b"
+    r"|\bnow points? (?:to|at)\b|\bthe (?:fix|change|patch|edit) (?:is|has been) applied\b", re.I)
+
+if (not _standing_down) and _mutated is False and CHANGE_CLAIM.search(final):
+    print(json.dumps({"text":
+        "Claims gate: this message says you changed something, but this turn's record contains "
+        "no change — no Edit/Write/MultiEdit, and no state-changing command.\n"
+        "  Nothing was modified. If you believe otherwise, that belief came from reasoning "
+        "forward about what the edit WOULD do rather than from the tool result that says it "
+        "happened; that is the exact failure this check exists to stop.\n"
+        "  Do one of two things, and nothing else:\n"
+        "    1. Actually make the change now, then say so — with a <claims> block.\n"
+        "    2. Withdraw the claim. Say plainly what is still undone and why.\n"
+        "  Do not restate the same assertion in softer words. Re-read the turn before replying: "
+        "a plan to edit, a diff you composed in prose, and an edit that ran are three different "
+        "things, and only the third one changed the disk."}))
+    sys.exit(0)
+
 m = re.search(r"<claims>(.*?)</claims>", final, re.S | re.I)
 if not m:
-    sys.exit(0)          # no claims made — nothing for THIS gate to judge
+    # No block. Free pass until 2026-08-22; now a narrow check (see DESIGN
+    # NOTES): mutated-something + asserts-success + nothing falsifiable = nudge.
+    # Fires at most once per turn — on re-invoke (stop_hook_active) we stand
+    # down, so this can never trap the agent.
+    if _standing_down or not _work:
+        sys.exit(0)
+
+    ASSERT = re.compile(
+        r"✅|\ball (?:tests?|checks?|gates?|probes?)\s+pass"
+        r"|\b(?:tests?|checks?|suite|probe|build)\s+(?:pass|passed|green)\b"
+        r"|\bverified\b|\bconfirmed\b|\bvalidated\b"
+        r"|\bworks? (?:now|correctly|as expected|fine)\b"
+        r"|\bis (?:now )?(?:working|fixed|resolved|correct|live|deployed)\b"
+        r"|\bsuccessfully\b|\bno (?:errors?|failures?|issues?) (?:found|remain)\b", re.I)
+    if not ASSERT.search(final):
+        sys.exit(0)          # work described, but no success asserted — fine
+
+    print(json.dumps({"text":
+        "Claims gate: this turn changed something and then asserted it works, but attached no "
+        "<claims> block — so not one word of it was checked against the world.\n"
+        "  Your success signal is a prediction that \"done\" is the likely next token, not "
+        "evidence the work happened. The block is what converts it into evidence, because it "
+        "is re-checked by something that is not you.\n"
+        "  Restate the turn with a block naming what you ACTUALLY ran this turn:\n"
+        "    <claims>\n"
+        "    file /abs/path sha256=<64hex>      (or: file /abs/path exists)\n"
+        "    cmd  \"<command you ran>\" exit=0\n"
+        "    url  https://host/path status=200\n"
+        "    </claims>\n"
+        "  Two rules. Claim only what you ran THIS turn — a command from an earlier turn "
+        "will not be found in the record and will fail the check. And if you did not actually "
+        "verify the thing, DROP THE ASSERTION rather than inventing a claim to satisfy this "
+        "gate: \"built, untested\" is an acceptable answer here; a false green is not.\n"
+        "  Before you restate — re-read what your verification actually executed. A script "
+        "that returns canned strings, or that passes on any non-empty output, has told you "
+        "nothing about the system you changed."}))
+    sys.exit(0)
 body = m.group(1)
 
 # ── collect what the turn actually ran, for cmd claims ───────────────────────

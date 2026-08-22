@@ -282,6 +282,17 @@
             "statusMessage": "Checking swarm mode"
           }
         ]
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__SERGE_HOME__/design-directive.sh",
+            "timeout": 15,
+            "statusMessage": "Loading engineering lenses"
+          }
+        ]
       }
     ],
     "SubagentStop": [
@@ -447,6 +458,17 @@
             "statusMessage": "Checking duplicate calls"
           }
         ]
+      },
+      {
+        "matcher": "ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__SERGE_HOME__/plan-gate.sh",
+            "timeout": 60,
+            "statusMessage": "Inspecting plan"
+          }
+        ]
       }
     ],
     "PostToolUse": [
@@ -513,6 +535,17 @@
             "command": "__SERGE_HOME__/tool-dedupe-guard.sh",
             "timeout": 5,
             "statusMessage": "Checking duplicate calls"
+          }
+        ]
+      },
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__SERGE_HOME__/arch-gate.sh",
+            "timeout": 120,
+            "statusMessage": "Computing architecture"
           }
         ]
       }

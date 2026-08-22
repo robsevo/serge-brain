@@ -15,7 +15,9 @@ import pandas as pd
 try:
     import urllib3.util.connection as _u3conn
     _u3conn.allowed_gai_family = lambda: socket.AF_INET
-except Exception:
+except (ImportError, AttributeError):
+    # Optional latency fix, not a requirement: without urllib3 (or on a version
+    # whose internals moved) requests still work, just with the IPv6 stall.
     pass
 
 TIMEOUT = 30

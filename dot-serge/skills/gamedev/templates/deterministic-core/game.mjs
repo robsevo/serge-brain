@@ -3,7 +3,7 @@
 // Why this shape: rendering (canvas/Godot/SDL) is a thin layer on top; the SIMULATION is a
 // pure function of (seed, inputs). That makes the game (a) reproducible — same seed + same
 // inputs => byte-identical run, and (b) HEADLESS-TESTABLE without a GPU or a window (see
-// game.test.mjs). This mirrors GRTZKY's engine discipline: seedable RNG, fixed timestep,
+// game.test.mjs). The discipline: seedable RNG, fixed timestep,
 // deterministic step, no hidden global state. Swap the render layer per engine; keep this core.
 
 // --- seedable PRNG (mulberry32): fast, deterministic, reproducible. Upgrade to a ChaCha impl
