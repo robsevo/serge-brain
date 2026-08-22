@@ -2,7 +2,7 @@
 
 A configuration layer that turns a Claude Code–compatible CLI into an opinionated
 engineering agent: 23 model seats behind a local router, 53 lifecycle
-hook wirings that check the agent's work as it goes, 16 specialist subagents, 22 skills,
+hook wirings that check the agent's work as it goes, 16 specialist subagents, 21 skills,
 and a constitution you write yourself.
 
 Its gates **compute** rather than ask. A dependency cycle is found by running
@@ -78,7 +78,7 @@ flowchart LR
 
     subgraph BRAIN["🧠 BRAIN — this repo"]
         direction TB
-        B1["constitution<br/>68 hook scripts<br/>16 agents · 22 skills<br/>23-seat router config"]
+        B1["constitution<br/>68 hook scripts<br/>16 agents · 21 skills<br/>23-seat router config"]
     end
 
     BRAIN -->|"1 · --append-system-prompt-file<br/><i>personality overlays</i>"| ENGINE
@@ -267,10 +267,10 @@ You have two options.
 **[serge-engine](https://github.com/robsevo/serge-engine) — MIT, purpose-built.**
 A companion project that implements exactly the contract below: an
 OpenAI-compatible agent loop, all 13 hook events, a permission system, and JSONL
-transcripts the gates in this repo re-read. It runs interactive sessions and
-headless turns, and never calls Anthropic. It does not yet have MCP, session
-resume, or skills/slash-command loading — if you need those, use the second
-option.
+transcripts the gates in this repo re-read. It runs interactive sessions with
+resume, loads the skills and slash commands in this repo, speaks MCP, and never
+calls Anthropic. What it does not do yet: load the 16 subagent definitions by
+name, and a full-screen TUI.
 
 ```bash
 git clone https://github.com/robsevo/serge-engine
@@ -297,8 +297,8 @@ and different audiences.
 
 A monorepo would couple them: every hook tweak would ship a new engine, and the
 brain could no longer claim to run on *any* conforming engine — which is the
-property that lets you keep a Claude Code derivative underneath if you want the
-MCP, session resume, or the slash commands in this repo.
+property that lets you keep a Claude Code derivative underneath if you want its
+named subagents or its full-screen TUI.
 
 **The recommended pairing** — two clones, side by side:
 
