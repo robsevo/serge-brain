@@ -190,7 +190,7 @@ Required
   ok    node >= 22 (found 22)
   ok    litellm  the model router
 
-API keys  (/home/you/.serge/keys.env)
+API keys  (~/.serge/keys.env)
   ok    GEMINI_API_KEY  verified
 
 ────────────────────────────────────────────
