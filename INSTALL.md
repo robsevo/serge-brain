@@ -150,6 +150,17 @@ Adding more providers is optional and additive: Serge routes across whatever you
 give it and falls back when one is rate-limited, so more keys means fewer
 stalls, not more capability.
 
+### Already had Serge before `keys.env` existed?
+
+Your keys are in `router.env` and `serge.env`. Collect them into the single file:
+
+```bash
+bash ~/.serge/migrate-keys.sh
+```
+
+It copies what it finds and leaves both originals alone — the launcher reads all
+three, so nothing breaks either way. Safe to run twice.
+
 ### Free tier running out?
 
 Any provider takes a **spare account**. Add the same name with `_2`:
