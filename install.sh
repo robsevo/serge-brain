@@ -228,7 +228,7 @@ detect_live() {
      [ "$SERGE_HOME" = "$HOME/.serge" ]; then
     echo "  - the model router is RUNNING right now (launchd: com.serge.router)"
   fi
-  for e in router.env serge.env; do
+  for e in keys.env router.env serge.env; do
     [ -f "$SERGE_HOME/$e" ] || continue
     if awk -F= '
         /^[[:space:]]*(export[[:space:]]+)?[A-Z0-9_]*(API_KEY|TOKEN|SECRET)[[:space:]]*=/ {
@@ -316,7 +316,7 @@ fi
 
 # ------------------------------------------------------------ credentials ----
 say "-- Creating blank credential files (mode 600)"
-for e in router.env serge.env; do
+for e in keys.env router.env serge.env; do
   if [ -f "$SERGE_HOME/$e.template" ] && [ ! -f "$SERGE_HOME/$e" ]; then
     run "cp '$SERGE_HOME/$e.template' '$SERGE_HOME/$e'"
     run "chmod 600 '$SERGE_HOME/$e'"
