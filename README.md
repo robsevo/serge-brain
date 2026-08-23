@@ -353,6 +353,10 @@ than failing the turn.
 
 > **Step-by-step: [INSTALL.md](INSTALL.md)** — prerequisites per OS, where to
 > get each key, and what to do when something breaks.
+>
+> **Printable reference:** [commands](docs/cheatsheet/serge-cheatsheet.pdf) ·
+> [skills and agents](docs/cheatsheet/serge-skills-cheatsheet.pdf) — one A4 page
+> each, generated from the same catalogue the `/` menu reads.
 
 **The short version:** clone, run `install.sh`, put **one** free key in **one**
 file (`~/.serge/keys.env`), then:
