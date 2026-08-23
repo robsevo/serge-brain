@@ -131,6 +131,13 @@ fi
 # ── keys ───────────────────────────────────────────────────────────────────
 printf '\n%sAPI keys%s  %s(%s/keys.env)%s\n' "$B" "$X" "$D" "$SH" "$X"
 
+# An install that predates keys.env has its keys in router.env / serge.env and
+# no single file to edit — the exact state this doctor exists to surface.
+if [ ! -f "$SH/keys.env" ] && { [ -s "$SH/router.env" ] || [ -s "$SH/serge.env" ]; }; then
+  warn "keys.env does not exist, but router.env/serge.env do"
+  hint "collect them into one file:  bash $SH/migrate-keys.sh"
+fi
+
 # keys.env last: it is the single file a new user fills, and it must win over
 # the blank router.env a fresh install ships.
 for f in "$SH/serge.env" "$SH/router.env" "$SH/keys.env"; do
