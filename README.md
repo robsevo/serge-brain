@@ -277,8 +277,10 @@ repaints. Pressing `/` opens a command menu carrying this repo's own
 `commands/*.md` alongside the built-ins, streams the reply as it arrives,
 renders markdown, prompts for permission rather than refusing silently, and
 searches and reads the web — behind an SSRF guard that resolves each hop and
-refuses private, loopback and cloud-metadata addresses. Every exit prints the
-command that resumes the session. It never calls Anthropic. What it does not do
+refuses private, loopback and cloud-metadata addresses. It runs long-lived
+commands in the background, so a dev server or a watcher no longer blocks the
+turn, and everything it started is killed when the session ends. Every exit
+prints the command that resumes the session. It never calls Anthropic. What it does not do
 yet: mouse support, and OAuth for remote MCP servers.
 
 ```bash
