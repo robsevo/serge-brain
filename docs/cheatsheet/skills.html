@@ -1,0 +1,209 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Serge — Skill Reference</title>
+<style>
+  /* Deliberately the same stylesheet as the command sheet: two cards from one
+     deck. Only the accent on the "loaded on demand" tag differs. */
+  @page { size: A4 landscape; margin: 0; }
+
+  :root {
+    --ink:#0b0e14; --panel:#111722; --panel-2:#0e131d; --line:#1e2836;
+    --text:#c9d4e2; --dim:#6c7b90; --blue:#6EB4E6; --blue-deep:#3f7cc4;
+    --blue-pale:#aadcff; --amber:#f0b93c;
+  }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { width:297mm; height:210mm; }
+  body {
+    background:var(--ink); color:var(--text);
+    font:7.9pt/1.34 "JetBrains Mono","DejaVu Sans Mono",ui-monospace,monospace;
+    position:relative; overflow:hidden;
+    -webkit-print-color-adjust:exact; print-color-adjust:exact;
+  }
+  body::before {
+    content:""; position:absolute; inset:0; pointer-events:none; opacity:.035;
+    background:repeating-linear-gradient(135deg,#fff 0 1px,transparent 1px 14px);
+  }
+  .sheet { position:relative; height:100%; padding:8mm 9mm 6mm; display:flex; flex-direction:column; }
+
+  .top { display:flex; align-items:flex-start; gap:6mm; flex:0 0 auto; }
+  .wordmark {
+    font-size:5.1pt; line-height:1.04; white-space:pre; letter-spacing:.4px;
+    background:linear-gradient(180deg,#aadcff 0%,#7db9f0 35%,#5096dc 68%,#28376e 100%);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .clawd { font-size:7pt; line-height:1.02; white-space:pre; color:var(--blue-deep); padding-top:.6mm; }
+  .title-block { flex:1; padding-top:.8mm; }
+  .title { font-size:14.5pt; font-weight:700; letter-spacing:-.3px; color:#eaf2fb; }
+  .title span { color:var(--blue); }
+  .sub { font-size:8pt; color:var(--dim); margin-top:.6mm; }
+  .ver { margin-left:auto; text-align:right; font-size:7.4pt; color:var(--dim); padding-top:1mm; white-space:nowrap; }
+  .ver b { color:var(--blue); font-weight:700; }
+
+  .rule {
+    height:1.1px; margin:3.2mm 0 3mm; flex:0 0 auto;
+    background:linear-gradient(90deg,#aadcff,#6EB4E6 22%,#3f7cc4 55%,#1b2f52 88%,transparent);
+  }
+
+  .cols { flex:1; display:grid; grid-template-columns:repeat(3,1fr); gap:0 6mm; min-height:0; }
+  .col { display:flex; flex-direction:column; gap:3.4mm; min-height:0; justify-content:space-between; }
+
+  .card {
+    background:linear-gradient(180deg,var(--panel) 0%,var(--panel-2) 100%);
+    border:.5px solid var(--line); border-radius:1.6mm; padding:2.5mm 2.8mm 2.7mm;
+  }
+  .card h2 {
+    font-size:7.2pt; font-weight:700; letter-spacing:1.3px; text-transform:uppercase;
+    color:var(--blue); margin-bottom:1.7mm; display:flex; align-items:center; gap:1.6mm;
+  }
+  .card h2::after { content:""; flex:1; height:.5px; background:var(--line); }
+  .card h2 em { font-style:normal; color:var(--dim); letter-spacing:.4px; text-transform:none; font-weight:400; font-size:6.8pt; }
+
+  table { width:100%; border-collapse:collapse; }
+  td { vertical-align:top; padding:.5mm 0; }
+  td.k { white-space:nowrap; padding-right:2mm; width:1%; }
+  td.v { color:var(--text); font-size:7.5pt; }
+  code { font-family:inherit; color:var(--blue-pale); font-weight:700; font-size:7.7pt; }
+  code.cmd { color:var(--amber); }
+  .note { color:var(--dim); }
+
+  kbd {
+    font-family:inherit; font-size:7.7pt; color:#dce8f5;
+    border:.5px solid #2b3a4d; border-bottom-width:1.2px; border-radius:1mm;
+    padding:.1mm 1.1mm; background:#16202e; white-space:nowrap;
+  }
+
+  .foot {
+    flex:0 0 auto; margin-top:2.6mm; padding-top:1.8mm; border-top:.5px solid var(--line);
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:7pt; color:var(--dim);
+  }
+  .foot b { color:var(--blue); font-weight:400; }
+</style>
+
+<div class="sheet">
+
+  <div class="top">
+    <div class="wordmark"> ███████╗ ███████╗ ██████╗   ██████╗  ███████╗
+ ██╔════╝ ██╔════╝ ██╔══██╗ ██╔════╝  ██╔════╝
+ ███████╗ █████╗   ██████╔╝ ██║  ███╗ █████╗
+ ╚════██║ ██╔══╝   ██╔══██╗ ██║   ██║ ██╔══╝
+ ███████║ ███████╗ ██║  ██║ ╚██████╔╝ ███████╗
+ ╚══════╝ ╚══════╝ ╚═╝  ╚═╝  ╚═════╝  ╚══════╝</div>
+    <div class="clawd">  ▛███▜
+▝▜████▛▘
+  ▘▘ ▝▝</div>
+    <div class="title-block">
+      <div class="title">Skill <span>Reference</span></div>
+      <div class="sub">Serge loads these itself when the work matches — <code>/skills</code> lists them live.</div>
+    </div>
+    <div class="ver">22 skills · 16 agents<br>engine <b>0.4.0</b></div>
+  </div>
+
+  <div class="rule"></div>
+
+  <div class="cols">
+
+    <!-- ── column 1 ─────────────────────────────────────────────────────── -->
+    <div class="col">
+
+      <div class="card">
+        <h2>How skills work</h2>
+        <table>
+          <tr><td class="v" colspan="2">Serge reads a one-line index of all 22 at session start and loads a skill's body only when the task matches — so the cost is paid by the work that needs it, not by every turn. You rarely invoke one by hand; naming it in the ask is enough.</td></tr>
+          <tr><td class="k"><code>/skills</code></td><td class="v">What is published, live</td></tr>
+          <tr><td class="k"><code class="cmd">/tabarnak</code></td><td class="v">The one skill with its own command <span class="note">— it takes over the session</span></td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Deterministic <em>they compute, not opine</em></h2>
+        <table>
+          <tr><td class="k"><code>complexity</code></td><td class="v">Prices real Big-O per function with the evidence chain, and catches <code>&gt;</code> vs <code>&gt;=</code> boundary slips</td></tr>
+          <tr><td class="k"><code>logic</code></td><td class="v">Truth tables, satisfiability, equivalence — proves a condition instead of reading it</td></tr>
+          <tr><td class="k"><code>system-integrity</code></td><td class="v">Detects unauthorised change to core files</td></tr>
+          <tr><td class="k"><code>safety-and-policy</code></td><td class="v">Where Serge declines, and how</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>How to work <em>process, not domain</em></h2>
+        <table>
+          <tr><td class="k"><code>problem-solving</code></td><td class="v">Goal → solution: restate, find the binding constraint, reduce to a solved problem, work one example by hand</td></tr>
+          <tr><td class="k"><code>debugging</code></td><td class="v">Symptom → cause: root cause before any fix, one hypothesis at a time, stop at three</td></tr>
+          <tr><td class="k"><code>feature-flow</code></td><td class="v">Build-and-troubleshoot discipline per feature</td></tr>
+          <tr><td class="k"><code>graph-engineering</code></td><td class="v">Multi-agent work as an explicit graph</td></tr>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ── column 2 ─────────────────────────────────────────────────────── -->
+    <div class="col">
+
+      <div class="card">
+        <h2>Building things</h2>
+        <table>
+          <tr><td class="k"><code>backend</code></td><td class="v">HTTP/JSON APIs, real streaming, the boring parts done right</td></tr>
+          <tr><td class="k"><code>frontend-design</code></td><td class="v">Design direction — distinctive and intentional, not templated</td></tr>
+          <tr><td class="k"><code>theme-factory</code></td><td class="v">Ten ready palettes and font pairings, hex codes included</td></tr>
+          <tr><td class="k"><code>gamedev</code></td><td class="v">Shippable games — Godot first, gameplay loop to frame budget</td></tr>
+          <tr><td class="k"><code>steam</code></td><td class="v">Steamworks, store pages, and market research</td></tr>
+          <tr><td class="k"><code>resilient-external-calls</code></td><td class="v">Every network and subprocess call time-bounded and correct when it fails</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Autonomous <em>runs without you</em></h2>
+        <table>
+          <tr><td class="k"><code class="cmd">/tabarnak</code></td><td class="v"><b>Story-by-story build loop.</b> A PRD becomes a queue; each story gets a FRESH session, and a box is checked only when its test command exits 0 — never by opinion. <code>progress.txt</code> carries learnings across iterations, because nothing else survives.</td></tr>
+          <tr><td class="k"><span class="note">needs</span></td><td class="v"><span class="note">A PRD with a runnable test per story. No test, no box.</span></td></tr>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ── column 3 ─────────────────────────────────────────────────────── -->
+    <div class="col">
+
+      <div class="card">
+        <h2>Data &amp; documents</h2>
+        <table>
+          <tr><td class="k"><code>datasci</code></td><td class="v">Acquire, wrangle, analyse with statistical care, then present it</td></tr>
+          <tr><td class="k"><code>office</code></td><td class="v">Excel, Word, PowerPoint, PDF — create, read, edit, convert</td></tr>
+          <tr><td class="k"><code>finance</code></td><td class="v">Company evaluation, stocks, crypto due diligence</td></tr>
+          <tr><td class="k"><code>weather</code></td><td class="v">Open-Meteo — current, forecast, historical</td></tr>
+          <tr><td class="k"><code>music</code></td><td class="v">Ableton Live workflow and project files</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>The council <em>16 agents · /agents</em></h2>
+        <table>
+          <tr><td class="k"><code>architect</code></td><td class="v">Deep reasoning, strongest seat <span class="note">— scarce</span></td></tr>
+          <tr><td class="k"><code>scout</code></td><td class="v">Cheap codebase discovery <span class="note">— plentiful</span></td></tr>
+          <tr><td class="k"><code>reviewer</code></td><td class="v">Independent second opinion, separate seat</td></tr>
+          <tr><td class="k"><code>researcher</code></td><td class="v">Live-web research</td></tr>
+          <tr><td class="k"><span class="note">+ 12</span></td><td class="v"><span class="note">security, test, backend, frontend, data, devops, gamedev, debugger…</span></td></tr>
+          <tr><td class="k"><span class="note">seats</span></td><td class="v"><span class="note">Each runs the seat its definition names — a scout never spends the architect's quota</span></td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Worth knowing</h2>
+        <table>
+          <tr><td class="k">loading</td><td class="v">Naming a skill in your ask is enough — you do not have to invoke it</td></tr>
+          <tr><td class="k">gates</td><td class="v"><code>complexity</code> and <code>logic</code> also run automatically as gates on code Serge writes, including code it borrowed</td></tr>
+          <tr><td class="k">adding</td><td class="v">Drop a folder with a <code>SKILL.md</code> into <code>~/.serge/skills/</code> — see <code>skill-authoring</code></td></tr>
+          <tr><td class="k">itself</td><td class="v"><code>fable5-operating-style</code> is how a turn is run; <code>skill-authoring</code> is how to add one</td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foot">
+    <div>Run <kbd>/skills</kbd> in a session for the live list — this sheet is generated from the same catalogue.</div>
+    <div>https://github.com/robsevo/serge-brain</div>
+  </div>
+
+</div>
