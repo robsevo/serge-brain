@@ -351,6 +351,37 @@ than failing the turn.
 
 ## 4. Prerequisites
 
+**The short version:** clone, run `install.sh`, put one key in one file, run the
+doctor.
+
+```bash
+bash ~/.serge/setup-doctor.sh
+```
+
+It reads your system — `pacman`, `apt`, `brew`, `dnf`, WSL — and prints the
+exact install command for anything missing, rather than naming the tool and
+leaving you to find it. Then it checks each key **against the real provider**,
+so a typo shows up there instead of later as a routing error that looks like a
+Serge bug. It exits `Ready.` as soon as one provider key works.
+
+Keys go in **one file**, `~/.serge/keys.env`, and you need **one** to start —
+not all of them. Gemini is the easiest: free, no card, and it backs both seats
+Serge uses by default, so a single key is a complete install.
+
+Free tiers run out, so any provider takes a spare account — add the same name
+with `_2` and run `rotate-keys.sh`:
+
+```bash
+GEMINI_API_KEY=first-account
+GEMINI_API_KEY_2=second-account     # then: bash ~/.serge/rotate-keys.sh
+```
+
+That duplicates every seat backed by that provider, once per account. LiteLLM
+load-balances across them and moves to the other when one is throttled or
+spent — a used-up free tier slows you down instead of stopping you. It is
+config, not new routing: LiteLLM already runs four deployments behind
+`free-qwen` today.
+
 | What | Why | Install |
 |---|---|---|
 | Node.js ≥ 22 | runs the engine | nodejs.org or your package manager |
