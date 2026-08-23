@@ -1,0 +1,271 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>Serge — Command Reference</title>
+<style>
+  /* A4 landscape, printed by headless chrome. Margins live here rather than in
+     the print flags so the layout is identical on screen and on paper. */
+  @page { size: A4 landscape; margin: 0; }
+
+  :root {
+    --ink:       #0b0e14;
+    --panel:     #111722;
+    --panel-2:   #0e131d;
+    --line:      #1e2836;
+    --text:      #c9d4e2;
+    --dim:       #6c7b90;
+    --blue:      #6EB4E6;
+    --blue-deep: #3f7cc4;
+    --blue-pale: #aadcff;
+    --amber:     #f0b93c;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 297mm; height: 210mm; }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font: 7.9pt/1.34 "JetBrains Mono", "DejaVu Sans Mono", ui-monospace, monospace;
+    position: relative;
+    overflow: hidden;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Faint diagonal weave — the same texture the social cards use, at a weight
+     that survives print without turning into moiré. */
+  body::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .035;
+    background: repeating-linear-gradient(135deg, #fff 0 1px, transparent 1px 14px);
+  }
+
+  .sheet { position: relative; height: 100%; padding: 8mm 9mm 6mm; display: flex; flex-direction: column; }
+
+  /* ── masthead ──────────────────────────────────────────────────────────── */
+  .top { display: flex; align-items: flex-start; gap: 6mm; flex: 0 0 auto; }
+
+  .wordmark {
+    font-size: 5.1pt; line-height: 1.04; white-space: pre; letter-spacing: .4px;
+    background: linear-gradient(180deg, #aadcff 0%, #7db9f0 35%, #5096dc 68%, #28376e 100%);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .clawd {
+    font-size: 7pt; line-height: 1.02; white-space: pre; color: var(--blue-deep);
+    padding-top: .6mm;
+  }
+  .title-block { flex: 1; padding-top: .8mm; }
+  .title { font-size: 14.5pt; font-weight: 700; letter-spacing: -.3px; color: #eaf2fb; }
+  .title span { color: var(--blue); }
+  .sub { font-size: 8pt; color: var(--dim); margin-top: .6mm; }
+  .ver {
+    margin-left: auto; text-align: right; font-size: 7.4pt; color: var(--dim);
+    padding-top: 1mm; white-space: nowrap;
+  }
+  .ver b { color: var(--blue); font-weight: 700; }
+
+  .rule {
+    height: 1.1px; margin: 3.2mm 0 3mm; flex: 0 0 auto;
+    background: linear-gradient(90deg, #aadcff, #6EB4E6 22%, #3f7cc4 55%, #1b2f52 88%, transparent);
+  }
+
+  /* ── the grid ──────────────────────────────────────────────────────────── */
+  .cols { flex: 1; display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 6mm; min-height: 0; }
+  .col  { display: flex; flex-direction: column; gap: 3.4mm; min-height: 0; justify-content: space-between; }
+
+  .card {
+    background: linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+    border: .5px solid var(--line);
+    border-radius: 1.6mm;
+    padding: 2.5mm 2.8mm 2.7mm;
+  }
+  .card h2 {
+    font-size: 7.2pt; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase;
+    color: var(--blue); margin-bottom: 1.7mm; display: flex; align-items: center; gap: 1.6mm;
+  }
+  .card h2::after { content: ""; flex: 1; height: .5px; background: var(--line); }
+  .card h2 em { font-style: normal; color: var(--dim); letter-spacing: .4px; text-transform: none; font-weight: 400; font-size: 6.8pt; }
+
+  table { width: 100%; border-collapse: collapse; }
+  td { vertical-align: top; padding: .5mm 0; }
+  td.k { white-space: nowrap; padding-right: 2mm; width: 1%; }
+  code {
+    font-family: inherit; color: var(--blue-pale); font-weight: 700; font-size: 7.7pt;
+  }
+  code.arg { color: var(--dim); font-weight: 400; }
+  td.v { color: var(--text); font-size: 7.5pt; }
+  .note { color: var(--dim); }
+
+  /* Keys rendered as physical caps. */
+  kbd {
+    font-family: inherit; font-size: 7.7pt; color: #dce8f5;
+    border: .5px solid #2b3a4d; border-bottom-width: 1.2px; border-radius: 1mm;
+    padding: .1mm 1.1mm; background: #16202e; white-space: nowrap;
+  }
+
+  .tag {
+    font-size: 5.9pt; letter-spacing: .5px; text-transform: uppercase;
+    color: var(--ink); background: var(--blue); border-radius: .8mm;
+    padding: .1mm 1mm; font-weight: 700;
+  }
+  .tag.brain { background: var(--amber); }
+
+  /* ── footer ────────────────────────────────────────────────────────────── */
+  .foot {
+    flex: 0 0 auto; margin-top: 2.6mm; padding-top: 1.8mm; border-top: .5px solid var(--line);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 7pt; color: var(--dim);
+  }
+  .foot b { color: var(--blue); font-weight: 400; }
+</style>
+
+<div class="sheet">
+
+  <div class="top">
+    <div class="wordmark"> ███████╗ ███████╗ ██████╗   ██████╗  ███████╗
+ ██╔════╝ ██╔════╝ ██╔══██╗ ██╔════╝  ██╔════╝
+ ███████╗ █████╗   ██████╔╝ ██║  ███╗ █████╗
+ ╚════██║ ██╔══╝   ██╔══██╗ ██║   ██║ ██╔══╝
+ ███████║ ███████╗ ██║  ██║ ╚██████╔╝ ███████╗
+ ╚══════╝ ╚══════╝ ╚═╝  ╚═╝  ╚═════╝  ╚══════╝</div>
+    <div class="clawd">  ▛███▜
+▝▜████▛▘
+  ▘▘ ▝▝</div>
+    <div class="title-block">
+      <div class="title">Command <span>Reference</span></div>
+      <div class="sub">Press <kbd>/</kbd> in any session — the menu filters as you type.</div>
+    </div>
+    <div class="ver">engine <b>0.4.0</b><br>20 tools · 22 skills · 16 agents</div>
+  </div>
+
+  <div class="rule"></div>
+
+  <div class="cols">
+
+    <!-- ── column 1 ─────────────────────────────────────────────────────── -->
+    <div class="col">
+
+      <div class="card">
+        <h2>Session <em>built-in</em></h2>
+        <table>
+          <tr><td class="k"><code>/help</code></td><td class="v">What Serge can do, and the keys that do it</td></tr>
+          <tr><td class="k"><code>/model</code> <code class="arg">[seat]</code></td><td class="v">Show the current seat, or move to another</td></tr>
+          <tr><td class="k"><code>/mode</code> <code class="arg">[name]</code></td><td class="v">Show or set the permission mode</td></tr>
+          <tr><td class="k"><code>/seats</code></td><td class="v">Every seat on the router, and which are reachable</td></tr>
+          <tr><td class="k"><code>/cost</code></td><td class="v">Tokens and requests spent this session</td></tr>
+          <tr><td class="k"><code>/clear</code></td><td class="v">Forget the conversation, keep the transcript</td></tr>
+          <tr><td class="k"><code>/resume</code></td><td class="v">Sessions you can pick up again</td></tr>
+          <tr><td class="k"><code>/exit</code></td><td class="v">Leave</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Loaded <em>built-in</em></h2>
+        <table>
+          <tr><td class="k"><code>/skills</code></td><td class="v">Skills the brain has published</td></tr>
+          <tr><td class="k"><code>/agents</code></td><td class="v">Subagents <code class="arg">Task</code> can spawn, and their seats</td></tr>
+          <tr><td class="k"><code>/mcp</code></td><td class="v">Connected MCP servers and their tool counts</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Keys</h2>
+        <table>
+          <tr><td class="k"><kbd>/</kbd></td><td class="v">Open the command menu</td></tr>
+          <tr><td class="k"><kbd>↑</kbd> <kbd>↓</kbd></td><td class="v">Move in the menu · history when it is closed</td></tr>
+          <tr><td class="k"><kbd>tab</kbd></td><td class="v">Complete the highlighted command</td></tr>
+          <tr><td class="k"><kbd>esc</kbd></td><td class="v">Close the menu</td></tr>
+          <tr><td class="k"><kbd>shift</kbd>+<kbd>tab</kbd></td><td class="v">Cycle permission mode</td></tr>
+          <tr><td class="k"><kbd>ctrl</kbd>+<kbd>c</kbd></td><td class="v">Interrupt a turn · twice to exit</td></tr>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ── column 2 ─────────────────────────────────────────────────────── -->
+    <div class="col">
+
+      <div class="card">
+        <h2>Thinking harder <em>brain</em></h2>
+        <table>
+          <tr><td class="k"><code>/hive</code></td><td class="v">Convene the council — architect + reviewer on every turn</td></tr>
+          <tr><td class="k"><code>/swarm</code></td><td class="v">Parallel agents with their own fan-out doctrine</td></tr>
+          <tr><td class="k"><code>/deepthink</code></td><td class="v">One hard question, self-consistency across passes</td></tr>
+          <tr><td class="k"><code>/consensus</code></td><td class="v">Independent attempts on diverse seats, then reconciled</td></tr>
+          <tr><td class="k"><code>/research</code></td><td class="v">Multi-angle research passes, synthesised</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Proving things <em>brain</em></h2>
+        <table>
+          <tr><td class="k"><code>/logic</code></td><td class="v">Prove or refute a boolean claim — truth table, not opinion</td></tr>
+          <tr><td class="k"><code>/find</code></td><td class="v">Search many naming conventions at once, ranked</td></tr>
+          <tr><td class="k"><code>/recap</code></td><td class="v">Read what just happened — scrollback, logs, sessions</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Memory <em>brain</em></h2>
+        <table>
+          <tr><td class="k"><code>/remember</code></td><td class="v">Save a durable fact to persistent memory</td></tr>
+          <tr><td class="k"><code>/learn</code></td><td class="v">Read a batch of code, persist an architecture digest</td></tr>
+          <tr><td class="k"><code>/plans</code></td><td class="v">Browse, reopen or delete shelved plans</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Permission modes <em>shift+tab</em></h2>
+        <table>
+          <tr><td class="k"><code>default</code></td><td class="v">Asks before editing or running anything</td></tr>
+          <tr><td class="k"><code>acceptEdits</code></td><td class="v">Edits freely; still asks for shell</td></tr>
+          <tr><td class="k"><code>plan</code></td><td class="v">Reads only — no change until the plan is accepted</td></tr>
+          <tr><td class="k"><code>fullAccess</code></td><td class="v">No prompts. <span class="note">Destructive commands still ask.</span></td></tr>
+        </table>
+      </div>
+
+    </div>
+
+    <!-- ── column 3 ─────────────────────────────────────────────────────── -->
+    <div class="col">
+
+      <div class="card">
+        <h2>SuperClaude <em>brain · /sc:</em></h2>
+        <table>
+          <tr><td class="k"><code>/sc:analyze</code></td><td class="v">Quality, security, performance, architecture</td></tr>
+          <tr><td class="k"><code>/sc:implement</code></td><td class="v">Build a feature with hive-assisted review</td></tr>
+          <tr><td class="k"><code>/sc:troubleshoot</code></td><td class="v">Diagnose code, builds, deploys, behaviour</td></tr>
+          <tr><td class="k"><code>/sc:test</code></td><td class="v">Run tests with coverage and failure diagnosis</td></tr>
+          <tr><td class="k"><code>/sc:git</code></td><td class="v">Commits and workflow</td></tr>
+          <tr><td class="k"><code>/sc:brainstorm</code></td><td class="v">Requirements discovery, Socratic</td></tr>
+          <tr><td class="k"><code>/sc:research</code></td><td class="v">Deep web research, evidence-based</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Setup <em>shell, not slash</em></h2>
+        <table>
+          <tr><td class="k"><code>setup-doctor.sh</code></td><td class="v">Checks your system and verifies every key live</td></tr>
+          <tr><td class="k"><code>rotate-keys.sh</code></td><td class="v">Add a spare account — <code class="arg">KEY_2</code> in <code class="arg">keys.env</code></td></tr>
+          <tr><td class="k"><code>serge --resume</code></td><td class="v">Pick a session back up — printed on every exit</td></tr>
+          <tr><td class="k"><code>serge --fork</code></td><td class="v">Branch a conversation into a new transcript</td></tr>
+          <tr><td class="k"><code>serge -p "…"</code></td><td class="v">One shot, headless, no TUI</td></tr>
+        </table>
+      </div>
+
+      <div class="card">
+        <h2>Worth knowing</h2>
+        <table>
+          <tr><td class="k"><code>/</code>&nbsp;menu</td><td class="v">Lists brain commands too — a built-in wins on a name clash, and the shadowed one says so</td></tr>
+          <tr><td class="k">gates</td><td class="v">Architecture, complexity and claims checks run on their own; nothing to invoke</td></tr>
+          <tr><td class="k">seats</td><td class="v">Free tier first, with failover. <code class="arg">/seats</code> shows what is live</td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="foot">
+    <div>Press <kbd>/</kbd> to see this list in the session — it is generated from the same catalogue.</div>
+    <div>https://github.com/robsevo/serge-brain &nbsp;·&nbsp; https://github.com/robsevo/serge-engine</div>
+  </div>
+
+</div>
