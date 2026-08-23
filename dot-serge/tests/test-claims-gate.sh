@@ -21,6 +21,16 @@ mktx() {
 {"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"c1","content":"$1","is_error":false}]}}
 EOF
 }
+# Same shape as mktx but the turn only READS — no mutation, so the
+# unclaimed-success check must not fire. Pins the other half of the hardened
+# contract: only turns that actually changed something are taxed.
+mktx_readonly() {
+  cat > "$T/tx" <<EOF
+{"type":"user","message":{"content":"explain the thing"}}
+{"type":"assistant","message":{"content":[{"type":"text","text":"w"},{"type":"tool_use","id":"c1","name":"Read","input":{"file_path":"$T/real.txt"}}]}}
+{"type":"user","message":{"content":[{"type":"tool_result","tool_use_id":"c1","content":"$1","is_error":false}]}}
+EOF
+}
 run() {
   printf '{"transcript_path":"%s","session_id":"c%s","last_assistant_message":%s}' \
     "$T/tx" "$RANDOM" "$(python3 -c 'import json,sys; print(json.dumps(sys.argv[1]))' "$1")" \
@@ -69,7 +79,16 @@ cmd \"bun test\" exit=0
 echo
 echo "── scope: the gate only judges claims that were made ──"
 mktx "12 pass, 0 fail"
-allows "no claims block at all"      "Done, I fixed the parser."
+# HARDENED 2026-08-22: a turn that MUTATED something and asserts success with
+# no falsifiable block is nudged once. The old contract — no <claims> block is a
+# free pass — was the hole that let "Done, I fixed the parser" ship on a turn
+# where nothing changed, which is the failure this gate exists for. A turn that
+# changes nothing still passes untaxed, so both halves are pinned here.
+blocks  "success claimed after a real edit, no claims block" \
+                                     "Done, I fixed the parser." "record"
+mktx_readonly "hello world"
+allows  "no claims block, and nothing was changed" "Here is how the parser works."
+mktx "12 pass, 0 fail"
 allows "empty claims block"          "Done.
 <claims>
 </claims>"

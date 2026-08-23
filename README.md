@@ -275,7 +275,8 @@ same stack the derived engine uses: finished turns are committed to scrollback
 once and never redrawn, so only the live region — spinner, mascot, status line —
 repaints. Pressing `/` opens a command menu carrying this repo's own
 `commands/*.md` alongside the built-ins. It never calls Anthropic. What it does
-not do yet: mouse support, and OAuth for remote MCP servers.
+not do yet: web search and fetch, mouse support, and OAuth for remote MCP
+servers.
 
 ```bash
 git clone https://github.com/robsevo/serge-engine
