@@ -274,9 +274,12 @@ over stdio, HTTP and SSE, and branches sessions. Its TUI is React and Ink, the
 same stack the derived engine uses: finished turns are committed to scrollback
 once and never redrawn, so only the live region — spinner, mascot, status line —
 repaints. Pressing `/` opens a command menu carrying this repo's own
-`commands/*.md` alongside the built-ins. It never calls Anthropic. What it does
-not do yet: web search and fetch, mouse support, and OAuth for remote MCP
-servers.
+`commands/*.md` alongside the built-ins, streams the reply as it arrives,
+renders markdown, prompts for permission rather than refusing silently, and
+searches and reads the web — behind an SSRF guard that resolves each hop and
+refuses private, loopback and cloud-metadata addresses. Every exit prints the
+command that resumes the session. It never calls Anthropic. What it does not do
+yet: mouse support, and OAuth for remote MCP servers.
 
 ```bash
 git clone https://github.com/robsevo/serge-engine
