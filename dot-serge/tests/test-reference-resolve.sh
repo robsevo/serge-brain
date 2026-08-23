@@ -24,9 +24,16 @@ print(json.dumps({"hook_event_name":"UserPromptSubmit","prompt":sys.argv[1],"cwd
 
 # 1. the prompt that triggered the web search: a project named, not stood in
 out=$(run "ok but what about serges router ON THE NEW OS.... WHAT ARE THE VALUES!?" $HOME/programs/osimage)
+# The third assertion used to be `grep -q "$SERGE_HOME"` — the config dir of the
+# SESSION. The hook reports the config dir of the PROJECT it resolved, which is
+# ~/.serge whichever install is running. Those coincide in a normal install and
+# diverge in a test rig (SERGE_HOME=~/.sergio), where the check failed while the
+# hook was correct. Assert what the hook actually promises: a live config dir
+# that exists.
+CFGDIR=$(printf '%s' "$out" | sed -n 's/.*live config dir: \([^ \\"]*\).*/\1/p' | head -1)
 if printf '%s' "$out" | grep -q "programs/serge-0.1.0" \
    && printf '%s' "$out" | grep -q "\.env\.example" \
-   && printf '%s' "$out" | grep -q "$SERGE_HOME"; then
+   && [ -n "$CFGDIR" ] && [ -d "$CFGDIR" ]; then
   ok "cross-project name → repo path + .env.example + live config dir"
 else bad "project resolution missed (out=${out:0:400})"; fi
 

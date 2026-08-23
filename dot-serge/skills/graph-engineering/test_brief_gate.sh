@@ -133,8 +133,19 @@ memcheck() { # memcheck <want:MEM|none> <label> <prompt>
   if [ "$want" = "$got" ]; then pass=$((pass+1)); printf '  ok    [%s] %s\n' "$got" "$label"
   else fail=$((fail+1)); printf '  FAIL  expected=%s got=%s :: %s\n' "$want" "$got" "$label"; fi
 }
-memcheck MEM  "relevant brief pulls serge memory into the subagent's world" \
-  "Fix the live channel player so it stops rebuffering during evening peak on the example-web mobile client. Investigate the stream stall watchdog and buffer configuration, then apply a fix."
+# The probe is DERIVED from a memory this install actually has (mem_probe.py),
+# not hardcoded. The old prompt named "example-web" — a project that exists only
+# in the public brain's de-identified corpus — so on an install whose memories
+# use real names it overlapped nothing, and this check failed while the gate was
+# working correctly. Deriving it makes the probe match by construction in either
+# world, and it still fails honestly if the scorer breaks.
+MEM_PROBE="$(python3 "$(dirname "$0")/mem_probe.py" "$TRUE_HOME/.serge/memory" 2>/dev/null)"
+if [ -z "$MEM_PROBE" ]; then
+  echo "  skip  could not derive a probe from the memory corpus"
+else
+  memcheck MEM  "relevant brief pulls serge memory into the subagent's world" \
+    "Investigate and fix the following: $MEM_PROBE"
+fi
 memcheck none "unrelated UI brief attaches no memory" \
   "Add a tooltip component to the design system with hover and focus states, matching the existing button component styling conventions."
 memcheck none "unrelated algorithm brief attaches no memory" \

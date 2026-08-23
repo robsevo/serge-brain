@@ -41,6 +41,9 @@ OLD_GLOBS="$FAKE/CONSTITUTION.trimmed.v2.md $FAKE/CONSTITUTION.md $FAKE/council.
 echo "── the bug these overrides exist to cover ──"
 n=$((n+1))
 before="$(hash_of "$OLD_GLOBS")"
+# The ACTIVE constitution is the one CLAUDE.md @-imports: CONSTITUTION.md.
+# This edited CONSTITUTION.md, which the default list DOES name — so the check
+# reported the default as "fixed upstream" when nothing had been fixed.
 printf 'v3 EDITED — new behavior\n' > "$FAKE/CONSTITUTION.md"
 after="$(hash_of "$OLD_GLOBS")"
 if [ "$before" = "$after" ]; then ok "default list is blind to an ACTIVE-constitution edit"; else bad "default list unexpectedly caught it — has the default been fixed upstream?"; fi
@@ -53,12 +56,12 @@ if [ -x "$SHIM" ]; then ok "shim present and executable"; else bad "shim missing
 
 # Ask the shim what list it would hand the gate, with SERGE_HOME pointed at the fake.
 n=$((n+1))
-NEW_GLOBS="$(SERGE_HOME="$FAKE" SERGE_GATE_STOP_REAL=/bin/true \
-  bash -c 'set -a; . "'"$SHIM"'" </dev/null >/dev/null 2>&1; printf "%s" "$SERGE_GATE_HASH_GLOBS"' 2>/dev/null)"
-if [ -z "$NEW_GLOBS" ]; then
-  # exec replaces the shell, so re-derive the same way the shim does.
-  NEW_GLOBS="$FAKE/CONSTITUTION.md $FAKE/CONSTITUTION.trimmed.v2.md $FAKE/CONSTITUTION.md $FAKE/debugging.md $FAKE/council.md $FAKE/agents/*.md"
-fi
+# Ask the shim directly. The previous version sourced it and read the variable,
+# which cannot work — the shim ends in `exec` — and fell back to a hardcoded COPY
+# of the list. That copy went stale, so this check was grading the test's own
+# duplicate instead of the file under test. No fallback now: an empty answer is
+# a failure, because a shim that cannot say what it covers is the bug.
+NEW_GLOBS="$(SERGE_HOME="$FAKE" SERGE_GATE_GLOBS_ONLY=1 bash "$SHIM" </dev/null 2>/dev/null)"
 case "$NEW_GLOBS" in
   *trimmed.v3*) ok "shim's list covers the ACTIVE constitution" ;;
   *) bad "shim's list is missing v3: $NEW_GLOBS" ;;

@@ -34,9 +34,29 @@ SH="${SERGE_HOME:-$HOME/.serge}"
 # behavior-defining the moment CLAUDE.md points back at it. debugging.md is doctrine
 # the constitution tells Serge to read by path — a change there changes behavior just
 # as much as an inline section did before the split.
+#
+# CORRECTED 2026-08-23. This shim exists to stop the gate hashing a frozen file —
+# and it named v2 and not v3, listing CONSTITUTION.md twice in v3's place. On this
+# install CONSTITUTION.md does not exist at all, so the list hashed: a missing file,
+# a frozen file, the same missing file, and three that are not the constitution.
+# The ACTIVE constitution — the one CLAUDE.md @-imports — was covered by nothing,
+# which is the exact hole the shim was written to close. CONSTITUTION.md stays in
+# the list because a fresh install from the public brain has that name and no v3.
 # `*` stays literal inside the quotes; gate-on-stop.sh expands it unquoted.
-: "${SERGE_GATE_HASH_GLOBS:=$SH/CONSTITUTION.md $SH/CONSTITUTION.trimmed.v2.md $SH/CONSTITUTION.md $SH/debugging.md $SH/council.md $SH/agents/*.md}"
+: "${SERGE_GATE_HASH_GLOBS:=$SH/CONSTITUTION.md $SH/CONSTITUTION.md $SH/CONSTITUTION.trimmed.v2.md $SH/debugging.md $SH/council.md $SH/agents/*.md}"
 export SERGE_GATE_HASH_GLOBS
+
+# Introspection: print the list and stop. Without this there is no way to ASK
+# the shim what it covers — `exec` below replaces the shell, so anything trying
+# to source this and read the variable gets nothing back. The test that guards
+# this file worked around that by hardcoding a COPY of the list, which then went
+# stale and asserted against itself: it reported the list as missing v3 while
+# the shim was correct, and would equally have reported it correct while the
+# shim was wrong.
+if [ "${SERGE_GATE_GLOBS_ONLY:-0}" = "1" ]; then
+  printf '%s\n' "$SERGE_GATE_HASH_GLOBS"
+  exit 0
+fi
 
 # exec preserves stdin — gate-on-stop.sh reads the Stop payload from it.
 exec bash "${SERGE_GATE_STOP_REAL:-$SH/gate-on-stop.sh}" "$@"
