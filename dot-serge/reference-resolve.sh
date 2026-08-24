@@ -138,9 +138,24 @@ FILE_RE = re.compile(
     r"ini|conf|cfg|service|timer|socket|lock|txt|sql|csv|tsv|env)))(?![\w/])"
 )
 
+# The most explicit path form in this vocabulary — "$SERGE_HOME/router.env", the
+# spelling used throughout serge's own README, INSTALL docs and test fixtures —
+# expanded to nothing, so the one way a user can name a config file UNAMBIGUOUSLY
+# was the one way that never resolved. Expand only the two vars that name real
+# roots, and only for path scanning: the project-name matcher below keeps the RAW
+# prompt, so an expanded home directory cannot manufacture a spurious project hit.
+def _expand_roots(text):
+    sh = os.environ.get("SERGE_HOME") or os.path.join(HOME, ".serge")
+    for var, val in (("SERGE_HOME", sh), ("HOME", HOME)):
+        text = re.sub(r"\$\{%s\}|\$%s\b" % (var, var), lambda _m, v=val: v, text)
+    return text
+
+
+scan = _expand_roots(prompt)
+
 path_lines = []
 seen_paths = set()
-for m in PATH_RE.finditer(prompt):
+for m in PATH_RE.finditer(scan):
     tok = m.group(1).rstrip(".,;:!?)]}>'\"")
     if len(tok) < 5 or (tok.count("/") < 2 and "." not in os.path.basename(tok)):
         continue
@@ -180,7 +195,7 @@ for m in PATH_RE.finditer(prompt):
 # "and/or" and "24/7" can never produce a line.
 REL_RE = re.compile(r"(?<![\w./~\-])([A-Za-z0-9_.\-]+(?:/[A-Za-z0-9_.\-]+)+)(?![\w/])")
 if len(path_lines) < 6:
-    for m in REL_RE.finditer(prompt):
+    for m in REL_RE.finditer(scan):
         tok = m.group(1).rstrip(".,;:!?)]}>'\"")
         if "://" in tok or tok in seen_paths or len(tok) < 5:
             continue
@@ -244,12 +259,38 @@ def norm(name):
 
 
 # candidate projects: ~/programs/* plus ~/.<name> config dirs
+#
+# SCAN DEPTH: a single listdir only sees projects sitting DIRECTLY in ~/programs.
+# The moment that directory is grouped — category folders, an archive folder, a
+# monorepo wrapper — every real project drops one level below this listing and
+# the names people actually type stop resolving, silently: the prompt simply
+# loses its project-grounding block, with no error anywhere. norm() already
+# strips version suffixes, so "foo-1.2.3" -> "foo" matches once it is VISIBLE;
+# the bug is purely one of depth. Two passes, so top-level names keep precedence
+# over nested ones; both are bounded listdir+isdir, no recursion.
+PROGRAMS = os.path.join(HOME, "programs")
 candidates = {}
 try:
-    for entry in sorted(os.listdir(os.path.join(HOME, "programs"))):
-        p = os.path.join(HOME, "programs", entry)
+    for entry in sorted(os.listdir(PROGRAMS)):
+        p = os.path.join(PROGRAMS, entry)
         if os.path.isdir(p):
             candidates.setdefault(norm(entry), []).append(p)
+except Exception:
+    pass
+try:
+    _nested = {}
+    for entry in sorted(os.listdir(PROGRAMS)):
+        p = os.path.join(PROGRAMS, entry)
+        if entry.startswith(".") or entry in SKIP or not os.path.isdir(p):
+            continue
+        for sub in sorted(os.listdir(p))[:200]:
+            if sub.startswith(".") or sub in SKIP:
+                continue
+            sp = os.path.join(p, sub)
+            if os.path.isdir(sp):
+                _nested.setdefault(norm(sub), []).append(sp)
+    for k, v in _nested.items():
+        candidates.setdefault(k, []).extend(v)   # top-level entries stay first
 except Exception:
     pass
 
