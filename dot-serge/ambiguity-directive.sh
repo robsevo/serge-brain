@@ -169,14 +169,39 @@ SPECIFIC_TOKEN = re.compile(r"""
   | \b\w+-(?:paid|coder|brain|flash|scout|large|qwen|flash3|flash25)\b
 """, re.X)
 
+# G7: unresolved REFERENT with no action verb. G3/DEICTIC requires a verb ("update
+# this", "change that"), so a purely referential turn — "yes that and the other",
+# "do the first one" — matches nothing and the turn gets no framing at all. Rare
+# (~0.4% of turns measured over a real prompt corpus) but it is precisely the case
+# the constitution's decoding-intent section has doctrine for — resolving referents
+# from the conversation rather than the words — with no hook putting that procedure
+# in front of the model at the decision point. Gated by SPECIFIC_TOKEN like G6, and
+# by PLUMBING because the harness's own retry/continuation messages ("the previous
+# turn was terminated") are not user turns and matched 7 of 10 hits in an
+# untightened draft of this pattern.
+BARE_REFERENT = re.compile(r"""
+    \b(?:the|that)\s+(?:other|first|second|last|latter|former)(?:\s+one)?\b
+  | \b(?:that|this)\s+one\b
+  | \bthe\s+one\s+(?:we|you|i|they)\b
+""", re.I | re.X)
+
+PLUMBING = re.compile(
+    r"previous turn was terminated|transient API failure|Stop hook feedback"
+    r"|session is being continued", re.I)
+
 hit_g4 = bool(FRESH_START.search(clean))
 hit_g5 = bool(BARE_FAILURE.search(clean))
 hit_g6 = bool(
     (COMPARATIVE_BARE.search(clean) or BARE_SLOT.search(clean))
     and not SPECIFIC_TOKEN.search(clean)
 )
+hit_g7 = bool(
+    BARE_REFERENT.search(clean)
+    and not SPECIFIC_TOKEN.search(clean)
+    and not PLUMBING.search(clean)
+)
 if not (VAGUE_ACTION.search(clean) or IRREVERSIBLE_VAGUE.search(clean)
-        or DEICTIC.search(clean) or hit_g4 or hit_g5 or hit_g6):
+        or DEICTIC.search(clean) or hit_g4 or hit_g5 or hit_g6 or hit_g7):
     sys.exit(0)
 
 ctx = (
@@ -232,6 +257,18 @@ if hit_g6:
         "'cheaper' than what?), state the baseline you are using in one line. If two or more "
         "candidates fit equally, name them and ask ONE question. Do NOT dodge the choice by "
         "applying the change to every candidate at once — that is not a resolution.\n"
+    )
+if hit_g7:
+    ctx += (
+        "7. UNRESOLVED REFERENT: this turn points at something ('the other', 'that one', "
+        "'the first one') without naming it, and the referent lives in the CONVERSATION, not "
+        "in the words. Resolve it before acting: re-read what was actually proposed, listed, "
+        "or offered in the preceding turns and say in one line WHICH item you are taking it "
+        "to mean. If the prior turn offered several things and this reply accepts some of "
+        "them, enumerate the ones you are acting on. If the referent genuinely does not "
+        "resolve against anything on record, ask ONE question naming the candidates — do not "
+        "invent a plausible target, and do not answer a different question than the one the "
+        "referent points at.\n"
     )
 ctx += "</system-reminder>"
 print(json.dumps({
