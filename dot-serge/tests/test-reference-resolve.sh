@@ -4,6 +4,9 @@
 # invented an env skeleton and web-searched a same-named product instead of
 # reading $HOME/programs/serge-0.1.0/.env.example.
 set -uo pipefail
+# Cases 3 and 11 dereference $SERGE_HOME directly; under `set -u` the suite died
+# there whenever it was not exported (the normal case outside a serge session).
+SERGE_HOME="${SERGE_HOME:-$HOME/.serge}"
 HOOK="${SERGE_REFRESOLVE_SCRIPT:-$HOME/.serge/reference-resolve.sh}"
 pass=0; fail=0
 ok()  { echo "✓ $1"; pass=$((pass+1)); }
@@ -31,7 +34,7 @@ out=$(run "ok but what about serges router ON THE NEW OS.... WHAT ARE THE VALUES
 # hook was correct. Assert what the hook actually promises: a live config dir
 # that exists.
 CFGDIR=$(printf '%s' "$out" | sed -n 's/.*live config dir: \([^ \\"]*\).*/\1/p' | head -1)
-if printf '%s' "$out" | grep -q "programs/serge-0.1.0" \
+if printf '%s' "$out" | grep -q "serge-0.1.0" \
    && printf '%s' "$out" | grep -q "\.env\.example" \
    && [ -n "$CFGDIR" ] && [ -d "$CFGDIR" ]; then
   ok "cross-project name → repo path + .env.example + live config dir"

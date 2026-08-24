@@ -12,8 +12,26 @@
 # Cheap and silent when fresh; prints a systemMessage only when stale.
 set -uo pipefail
 
-BIN="${SERGE_DIST_PATH:-$HOME/programs/serge-0.1.0/dist/cli.mjs}"
-[ -f "$BIN" ] || exit 0
+# A HARDCODED default only works while the install lives at exactly that path.
+# Move or rename the checkout and the file stops existing, at which point the
+# `[ -f "$BIN" ] || exit 0` below turns this watchdog into a silent no-op — the
+# very failure it exists to catch (running stale code with no warning). Resolve
+# the SAME way the launcher resolves itself: follow the `serge` symlink to the
+# real script directory. SERGE_DIST_PATH still wins; the old location stays as a
+# last-resort fallback.
+if [ -n "${SERGE_DIST_PATH:-}" ]; then
+  BIN="$SERGE_DIST_PATH"
+else
+  _serge_real="$(readlink -f "$(command -v serge 2>/dev/null)" 2>/dev/null || true)"
+  BIN=""
+  for _cand in \
+    ${_serge_real:+"$(dirname "$_serge_real")/dist/cli.mjs"} \
+    "$HOME/programs/serge-0.1.0/dist/cli.mjs"
+  do
+    [ -f "$_cand" ] && { BIN="$_cand"; break; }
+  done
+fi
+[ -n "$BIN" ] && [ -f "$BIN" ] || exit 0
 
 # Walk up from the hook shell to the serge node process (title is 'serge';
 # some spawn paths interpose an extra shell).

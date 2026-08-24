@@ -10,7 +10,16 @@
 # down). Skips loudly — not silently — if serge/bench env is missing.
 set -uo pipefail
 
-SERGE_BIN="${SERGE_BIN:-$HOME/programs/serge-0.1.0/serge}"
+# A hardcoded launcher path makes this suite SKIP (exit 1) rather than run
+# whenever the checkout is not at exactly that location. Follow the `serge`
+# symlink first, then fall back to the historical path.
+SERGE_BIN="${SERGE_BIN:-}"
+if [ -z "$SERGE_BIN" ]; then
+  _s="$(readlink -f "$(command -v serge 2>/dev/null)" 2>/dev/null || true)"
+  for _c in ${_s:+"$_s"} "$HOME/programs/serge-0.1.0/serge"; do
+    [ -x "$_c" ] && { SERGE_BIN="$_c"; break; }
+  done
+fi
 BENCH_ENV="${SERGE_BENCH_ENV:-$HOME/.serge/evals/swe/bench.env}"
 [ -x "$SERGE_BIN" ] || { echo "SKIP: serge launcher not found at $SERGE_BIN"; exit 1; }
 [ -f "$BENCH_ENV" ] || { echo "SKIP: bench env not found at $BENCH_ENV"; exit 1; }
