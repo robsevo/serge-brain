@@ -74,7 +74,15 @@ fi
 # unintentionally, so the seat-name-only pattern was blind to the case it
 # existed to catch — it read 0 through the $6.19 day that prompted this fix.
 PAIDF="$MON/.paid-seat-hits"
-paid_now=$(find "$SERGE_HOME/projects" -name '*.jsonl' -newermt "$(date -u +%F)" 2>/dev/null \
+# TZ SKEW: this passed `date -u +%F` — a UTC date — to `-newermt`, which parses a
+# bare date in LOCAL time. Anywhere west of UTC the two disagree for the last hours
+# of every local day: the cutoff becomes a LOCAL midnight that has not happened yet,
+# the find matches nothing, and this tripwire reads 0 paid turns — then writes that
+# 0 over .paid-seat-hits, clobbering the day's running total. That is exactly the
+# blindness the served-name regression test guards, reintroduced through the date
+# format. Fix: a full ISO-8601 instant with an explicit Z, so the cutoff is real UTC
+# midnight and stays consistent with the UTC day/month keys used further down.
+paid_now=$(find "$SERGE_HOME/projects" -name '*.jsonl' -newermt "$(date -u +%FT00:00:00Z)" 2>/dev/null \
   | xargs -r grep -hoE '"model": ?"(haiku-paid|sonnet-paid|opus-paid|kimi-coder|cheap-paid|anthropic/claude-haiku-4\.5|anthropic/claude-sonnet-5|anthropic/claude-opus-4\.8|moonshotai/kimi-k2\.5|qwen/qwen3-coder-next)"' 2>/dev/null | wc -l)
 paid_prev=$(cat "$PAIDF" 2>/dev/null || echo 0)
 case "$paid_prev" in ''|*[!0-9]*) paid_prev=0;; esac
