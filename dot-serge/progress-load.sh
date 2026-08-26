@@ -10,8 +10,9 @@
 # The file is MODEL-written: Serge maintains it per the constitution's
 # `## execution` → `progress` rule. This hook only READS + injects it, and ensures
 # the directory exists so the model's write can't fail. Per-project, stored under
-# ~/.serge/projects/<encoded-cwd>/PROGRESS.md (encoding: "/" and "." → "-", the
-# same key Serge uses for its session dirs) — NOT in the user's repo.
+# ~/.serge/projects/<encoded-cwd>/PROGRESS.md (encoding: every non-alphanumeric
+# byte → "-", the same key Serge uses for its session dirs) — NOT in the user's
+# repo.
 #
 # jq is NOT installed on this host — JSON via python3, like Serge's other hooks.
 # Safe no-op when: no python3. Must exit 0 and write ONLY to stdout so the harness
@@ -31,8 +32,11 @@ print(d.get("cwd") or "")
 ' 2>/dev/null)"
 [ -z "$cwd" ] && cwd="$PWD"
 
-# Encode cwd the way Serge keys its per-project dirs: "/" and "." → "-".
-enc="$(printf '%s' "$cwd" | sed 's#[/.]#-#g')"
+# Encode cwd the way Serge keys its per-project dirs: every non-alphanumeric
+# byte → "-" (sanitizePath). Mapping only "/" and "." matched for plain paths
+# and diverged for any cwd holding "_", "-" or a space — and a wrong key here
+# does not error, it just writes PROGRESS.md into a directory nothing reads.
+enc="$(printf '%s' "$cwd" | sed 's#[^a-zA-Z0-9]#-#g')"
 PROJ_DIR="${SERGE_PROJECTS_DIR:-$HOME/.serge/projects}/$enc"
 PROGRESS_FILE="$PROJ_DIR/PROGRESS.md"
 

@@ -58,8 +58,13 @@ fi
 
 # --- 3. recent session transcript -------------------------------------------
 section "RECENT SESSION TRANSCRIPT"
-# Claude Code/Serge slugs the project dir from the cwd: '/' and '.' -> '-'.
-slug=$(printf '%s' "$PWD" | sed 's#[/.]#-#g')
+# Claude Code/Serge slugs the project dir from the cwd: EVERY non-alphanumeric
+# byte -> '-' (sanitizePath). Mapping only '/' and '.' agreed with that for most
+# paths and silently disagreed for any cwd containing '_', '-' or a space, which
+# read as "no transcript" rather than as a bug. Long paths (>200 chars) also get
+# a hash suffix that bash cannot reproduce; those simply miss, which is why the
+# directory check below stays a soft skip.
+slug=$(printf '%s' "$PWD" | sed 's#[^a-zA-Z0-9]#-#g')
 TXDIR="$SERGE_HOME/projects/$slug"
 if [ -d "$TXDIR" ]; then
   newest=$(ls -t "$TXDIR"/*.jsonl 2>/dev/null | head -1)
