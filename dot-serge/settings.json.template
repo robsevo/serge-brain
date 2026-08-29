@@ -410,6 +410,17 @@
         "hooks": [
           {
             "type": "command",
+            "command": "__SERGE_HOME__/download-gate.sh",
+            "timeout": 10,
+            "statusMessage": "Checking download source"
+          }
+        ]
+      },
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
             "command": "__SERGE_HOME__/vague-delete-gate.sh",
             "statusMessage": "Checking eval baseline"
           }
@@ -472,6 +483,17 @@
       }
     ],
     "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__SERGE_HOME__/download-scan.sh",
+            "timeout": 200,
+            "statusMessage": "Scanning downloaded file"
+          }
+        ]
+      },
       {
         "matcher": "Edit|Write|MultiEdit",
         "hooks": [
