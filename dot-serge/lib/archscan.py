@@ -57,12 +57,77 @@ TEST_RE = re.compile(r"(^|[./_-])(test|tests|spec|__tests__)([./_-]|$)", re.I)
 ENTRY_RE = re.compile(
     r"(^|/)(index|main|cli|app|server|setup|conftest|__init__|__main__)\.[a-z]+$", re.I
 )
+# Files a FRAMEWORK invokes by path, never by import. Nothing imports a Next.js
+# route.ts — the router mounts it — so the import graph shows it stranded and
+# orphan-module fires on every API route in the repo. Reported against tvspot's
+# vod-stream route while it was in active production use.
+FRAMEWORK_ENTRY_RE = re.compile(
+    r"(^|/)(app|src/app|pages|src/pages)/.*/?(route|page|layout|template|default|loading|error"
+    r"|not-found|global-error|sitemap|robots|manifest|opengraph-image|twitter-image|icon|apple-icon)"
+    r"\.[jt]sx?$"
+    r"|(^|/)(middleware|proxy|instrumentation|next\.config|vite\.config|tailwind\.config"
+    r"|postcss\.config|eslint\.config|svelte\.config|nuxt\.config|astro\.config)\.[jtm]sx?$",
+    re.I,
+)
 # NOT "tools/" — that is a production directory as often as a developer one
 # (a tool registry, a plugin dir). Including it marked every tool module in
 # serge-engine self-referential because its own registry lives in tools/.
 # Only directories that are unambiguously developer-side belong here.
 SCRIPTISH_RE = re.compile(
     r"(^|/)(scripts|bin|examples?|benchmarks?|fixtures?|templates?|scaffold\w*)/", re.I)
+
+
+def mask_comments(src):
+    """Blank comment bodies, preserving every offset, newline and line number.
+
+    Every JS check below is a regex over source text, and prose describes code.
+    A route comment reading "a full segment fetch (no Range)" matches the bare
+    fetch pattern and reports an unbounded-resource that does not exist.
+
+    Observed 2026-08-29 in tvspot's app/api/vod-stream/route.ts: two such
+    phantoms, both from comments, on a file whose four real fetch calls all
+    carried AbortSignal.timeout. That was enough for a model to conclude the
+    file was architecturally non-compliant, revert a correct optimization it
+    had just made, and ship a refactor with dead code in it. A false positive
+    does not merely annoy — it redirects work. See the "clean corpus is equally
+    load-bearing" note in archscan_test.py.
+
+    Strings are skipped rather than blanked, so a URL's "//" cannot be mistaken
+    for a line comment and blank out real code after it on the same line.
+    """
+    out = list(src)
+    i, n = 0, len(src)
+    while i < n:
+        c = src[i]
+        if c in "\"'`":
+            quote = c
+            i += 1
+            while i < n:
+                if src[i] == "\\":
+                    i += 2
+                    continue
+                if src[i] == quote:
+                    i += 1
+                    break
+                i += 1
+            continue
+        if c == "/" and i + 1 < n:
+            nxt = src[i + 1]
+            if nxt == "/":
+                while i < n and src[i] != "\n":
+                    out[i] = " "
+                    i += 1
+                continue
+            if nxt == "*":
+                end = src.find("*/", i + 2)
+                end = n if end == -1 else end + 2
+                for k in range(i, end):
+                    if src[k] != "\n":
+                        out[k] = " "
+                i = end
+                continue
+        i += 1
+    return "".join(out)
 
 
 def is_test(path):
@@ -341,6 +406,18 @@ JS_TIMEOUT_HINT = re.compile(r"signal|timeout|AbortController|AbortSignal", re.I
 # NOT .map/.filter/.reduce: chaining them is SEQUENTIAL passes over the same
 # data — O(n) total, not nesting. Treating a chain as a loop reported
 # `.split().map().filter().some()` as O(n*m), which it is not.
+# Two shapes of the same defect. The annotated form is how it appears in TS
+# (`new Map<string, Promise<Response>>()`); the inline form is `set(k, fetch(u))`.
+JS_SHARED_RESPONSE = re.compile(
+    r"Map\s*<[^,>]+,\s*Promise\s*<\s*Response\s*>|Map\s*<[^,>]+,\s*Response\s*>"
+    r"|\.set\s*\([^;()]{0,80}\bfetch\s*\(",
+    re.S)
+# The plain-JS shape: the fetch promise goes into a variable on one line and
+# into the cache on the next, so no single regex spans it. Catch the assignment,
+# then look for that variable being stored.
+JS_FETCH_ASSIGN = re.compile(r"\b(\w+)\s*=\s*fetch\s*\(")
+JS_BODY_READ = re.compile(r"\.(?:arrayBuffer|json|text|blob|formData)\s*\(\s*\)")
+JS_RESPONSE_CLONE = re.compile(r"\.clone\s*\(\s*\)")
 JS_FIND_IN_LOOP = re.compile(r"\b(?:for|while)\s*\(|\.forEach\s*\(", re.M)
 JS_LINEAR_SCAN = re.compile(r"\.(?:find|findIndex|includes|indexOf|some)\s*\(", re.M)
 JS_QUERY = re.compile(
@@ -370,6 +447,11 @@ def _js_retry_justified(src):
 
 
 def js_checks(path, src, out):
+    # Comment-masked view for the checks that look for CODE. The empty-catch and
+    # bypass-comment checks below deliberately keep reading `src`, because for
+    # those the comment IS the subject.
+    code = mask_comments(src)
+
     # swallowed errors
     # JS catch is always broad — there is no narrow clause — so an empty one is
     # high unless it carries a real justification. JS_EMPTY_CATCH only matches a
@@ -394,19 +476,40 @@ def js_checks(path, src, out):
                      "re-throw, return an error result, or state why continuing is correct"))
 
     # unbounded network
-    for m in JS_FETCH.finditer(src):
-        window = src[max(0, m.start() - 200): m.start() + 400]
+    for m in JS_FETCH.finditer(code):
+        window = code[max(0, m.start() - 200): m.start() + 400]
         if not JS_TIMEOUT_HINT.search(window):
-            out.append(F("high", "unbounded-resource", path, line_of(src, m.start()),
+            out.append(F("high", "unbounded-resource", path, line_of(code, m.start()),
                          "network call with no timeout or abort signal — it can hang forever",
                          "pass an AbortSignal with a timeout"))
 
+    # A Response body is a one-shot stream. Cache or coalesce the RESPONSE and
+    # the second consumer gets "Body is unusable: Body has already been read" —
+    # so the failure lands precisely on the concurrency the cache was added for,
+    # and only under load. Observed 2026-08-29 in a request-collapsing helper
+    # that stored Promise<Response> in a module Map; the first caller succeeded
+    # and every concurrent one threw. Share the buffered bytes, or clone().
+    if not JS_RESPONSE_CLONE.search(code) and JS_BODY_READ.search(code):
+        hit = JS_SHARED_RESPONSE.search(code)
+        if hit is None:
+            for am in JS_FETCH_ASSIGN.finditer(code):
+                var = am.group(1)
+                if re.search(r"\.set\s*\([^)]*\b%s\b" % re.escape(var), code):
+                    hit = am
+                    break
+        if hit is not None:
+            out.append(F("high", "shared-one-shot-body", path, line_of(code, hit.start()),
+                         "a Response (or Promise<Response>) is stored for reuse and its body is "
+                         "read elsewhere — a body can only be read once, so the second reader throws",
+                         "store the buffered bytes (await res.arrayBuffer()) instead of the "
+                         "Response, or hand each consumer res.clone()"))
+
     # N+1 and O(n^2) lookups: scan each loop body
-    for lm in JS_FIND_IN_LOOP.finditer(src):
-        body = src[lm.end(): lm.end() + 600]
+    for lm in JS_FIND_IN_LOOP.finditer(code):
+        body = code[lm.end(): lm.end() + 600]
         q = JS_QUERY.search(body)
         if q:
-            out.append(F("high", "n-plus-1", path, line_of(src, lm.start()),
+            out.append(F("high", "n-plus-1", path, line_of(code, lm.start()),
                          "query call inside a loop — N+1 round trips",
                          "batch the query outside the loop, or use a join / IN clause"))
         # A scan over a STRING LITERAL is O(1) on a constant — `'.+^$'.includes(c)`
@@ -415,7 +518,7 @@ def js_checks(path, src, out):
                   if not re.search(r"['\"`][^'\"`\n]{0,80}['\"`]\s*$",
                                    body[:mm.start()])), None)
         if s and not q:
-            out.append(F("medium", "wrong-container", path, line_of(src, lm.start()),
+            out.append(F("medium", "wrong-container", path, line_of(code, lm.start()),
                          "linear scan (.find/.includes/.indexOf) inside a loop — O(n*m)",
                          "build a Map or Set once before the loop for O(1) lookup"))
 
@@ -686,7 +789,7 @@ def py_checks(path, src, out):
 
 def is_entrypoint(path, src):
     """Filename convention, a shebang, or a __main__ guard — all mean 'run me'."""
-    if ENTRY_RE.search(path):
+    if ENTRY_RE.search(path) or FRAMEWORK_ENTRY_RE.search(path):
         return True
     if src.startswith("#!"):
         return True
@@ -890,7 +993,7 @@ def graph_checks(root, targets, edges, fanin, sources, out):
     # Untested behaviour: a changed non-test module with no test anywhere naming it.
     test_files = [f for f in sources if is_test(f)]
     for f in targets:
-        if (is_test(f) or ENTRY_RE.search(f) or MIGRATION_RE.search(f)
+        if (is_test(f) or ENTRY_RE.search(f) or FRAMEWORK_ENTRY_RE.search(f) or MIGRATION_RE.search(f)
                 or SCRIPTISH_RE.search(f)):
             continue
         stem = os.path.splitext(os.path.basename(f))[0]

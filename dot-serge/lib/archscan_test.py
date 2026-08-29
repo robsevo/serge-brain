@@ -56,6 +56,18 @@ DEFECTS = [
         "net.js": "export async function get(u){ const r = await fetch(u); return r.json() }\n",
     }, "net.js", "unbounded-resource"),
 
+    ("Response shared between concurrent callers", {
+        "index.js": "import './collapse.js'\n",
+        "collapse.js": (
+            "const inflight = new Map()\n"
+            "export async function get(u){\n"
+            "  let p = inflight.get(u)\n"
+            "  if (!p) { p = fetch(u, { signal: AbortSignal.timeout(5000) }); inflight.set(u, p) }\n"
+            "  const res = await p\n"
+            "  return Buffer.from(await res.arrayBuffer())\n"
+            "}\n"),
+    }, "collapse.js", "shared-one-shot-body"),
+
     ("N+1 query in loop", {
         "index.js": "import './q.js'\n",
         "q.js": ("export async function load(ids){ const out=[]\n"
@@ -217,6 +229,44 @@ CLEAN = [
                    "  const r = await fetch(u, { signal: AbortSignal.timeout(5000) })\n"
                    "  return r.json() }\n"),
     }, "net.js"),
+
+    ("comments describing network calls are not network calls", {
+        "index.js": "import './net.js'\n",
+        "net.js": (
+            "// Only safe on a FULL segment fetch (no Range) — a Range fetch (seek)\n"
+            "/* the byte path does its own fetch (capped) further down */\n"
+            "export async function get(u){\n"
+            "  const r = await fetch(u, { signal: AbortSignal.timeout(5000) })\n"
+            "  return r.json() }\n"),
+    }, "net.js"),
+
+    ("a URL's // is not a line comment", {
+        "index.js": "import './net2.js'\n",
+        "net2.js": (
+            "export async function get(){\n"
+            "  const u = 'http://example.test/a'; const r = await fetch(u, { signal: AbortSignal.timeout(5000) })\n"
+            "  return r.json() }\n"),
+    }, "net2.js"),
+
+    ("framework route is an entrypoint, not an orphan", {
+        "index.js": "export const boot = () => 1\n",
+        "app/api/thing/route.ts": "export async function GET(){ return new Response('ok') }\n",
+    }, "app/api/thing/route.ts"),
+
+    ("coalescing that shares buffered bytes, not the Response", {
+        "index.js": "import './collapse2.js'\n",
+        "collapse2.js": (
+            "const inflight = new Map()\n"
+            "export async function get(u){\n"
+            "  let p = inflight.get(u)\n"
+            "  if (!p) {\n"
+            "    p = Promise.resolve().then(() => fetch(u, { signal: AbortSignal.timeout(5000) }))\n"
+            "      .then(async (r) => Buffer.from(await r.arrayBuffer()))\n"
+            "    inflight.set(u, p)\n"
+            "  }\n"
+            "  return p\n"
+            "}\n"),
+    }, "collapse2.js"),
 
     ("catch that re-throws", {
         "index.js": "import './h.js'\n",
