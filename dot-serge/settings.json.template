@@ -570,6 +570,17 @@
           }
         ],
         "matcher": "*"
+      },
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__SERGE_HOME__/explain-on-stop.sh",
+            "timeout": 15,
+            "statusMessage": "Checking the turn explains itself"
+          }
+        ]
       }
     ],
     "StopFailure": [
