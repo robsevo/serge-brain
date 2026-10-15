@@ -1,0 +1,28 @@
+THIRD-PARTY MATERIAL
+
+Some skills and slash commands in this repository are adapted from other
+projects and remain under their own licenses (MIT and Apache-2.0). Those
+licenses, the works they cover, and a statement of the modifications made are
+in THIRD_PARTY.md.
+
+---
+
+SCOPE OF THIS LICENSE
+
+This license covers the Serge configuration layer only: the constitution
+scaffold, hook and helper scripts, subagent definitions, skills, slash
+commands, router configuration, service units, installer, and documentation
+contained in this repository.
+
+It does NOT cover the engine.
+
+Serge is designed to run on a CLI derived from Anthropic's Claude Code. That
+code is proprietary software:
+
+  Copyright (c) Anthropic PBC. All rights reserved.
+  Subject to Anthropic's Commercial Terms of Service.
+
+This repository does not contain, vendor, or distribute that code, and the MIT
+grant above does not extend to it. If you bundle an engine with a fork of this
+repository, you are making a distribution decision about someone else's
+proprietary software — evaluate your own legal position first.

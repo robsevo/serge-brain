@@ -956,3 +956,5 @@ and is **not** MIT: that code is Anthropic's proprietary software, subject to
 Anthropic's Commercial Terms of Service. This repo neither contains nor
 distributes it. Evaluate your own position before bundling an engine with a
 fork of this repo.
+
+Notes on what the licence covers: [NOTICE](NOTICE).
